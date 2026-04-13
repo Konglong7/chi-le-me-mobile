@@ -43,6 +43,7 @@ type Action =
   | { type: 'addShare'; payload: CreateShareInput }
   | { type: 'setHistoryFilter'; filter: HistoryFilter }
   | { type: 'addWheelOption'; name: string }
+  | { type: 'addWheelOptions'; names: string[] }
   | { type: 'removeWheelOption'; optionId: string }
   | { type: 'clearWheelOptions' }
   | { type: 'importWheelOptions' }
@@ -73,6 +74,7 @@ interface AppStoreValue {
     addShare: (payload: CreateShareInput) => void;
     setHistoryFilter: (filter: HistoryFilter) => void;
     addWheelOption: (name: string) => void;
+    addWheelOptions: (names: string[]) => void;
     removeWheelOption: (optionId: string) => void;
     clearWheelOptions: () => void;
     importWheelOptions: () => void;
@@ -102,11 +104,15 @@ function createAvatarSeed(nickname: string) {
 }
 
 function createStatus(proposal: Proposal): ProposalStatus {
+  if (!proposal.joinEnabled && !proposal.voteEnabled) {
+    return '组队中';
+  }
+
   if (proposal.teamMembers.length >= proposal.maxPeople) {
     return '已成团';
   }
 
-  if (proposal.voteOptions.length > 1) {
+  if (proposal.voteEnabled && proposal.voteOptions.length > 1) {
     return '投票中';
   }
 
@@ -207,20 +213,24 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
         creatorAvatarSeed: state.currentUser.avatarSeed,
         createdLabel: '刚刚',
         proposalType: action.payload.proposalType,
-        status: action.payload.voteOptions.length > 1 ? '投票中' : '组队中',
+        status: action.payload.voteEnabled && action.payload.voteOptions.length > 1 ? '投票中' : '组队中',
         eventLabel: action.payload.eventLabel.trim() || '今天 18:30',
         expectedPeopleLabel: `预计${action.payload.maxPeople}人`,
         targetName: action.payload.targetName.trim(),
         remark: '新提案已发布，快来表态。',
+        voteEnabled: action.payload.voteEnabled,
+        joinEnabled: action.payload.joinEnabled,
         voteMode: 'single',
-        voteOptions: action.payload.voteOptions
+        voteOptions: action.payload.voteEnabled
+          ? action.payload.voteOptions
           .filter((item) => item.trim().length > 0)
           .map((item, index) => ({
             id: `proposal-option-${Date.now()}-${index}`,
             name: item.trim(),
             voterNicknames: [],
-          })),
-        teamMembers: [createTeamMember(state.currentUser.nickname)],
+          }))
+          : [],
+        teamMembers: action.payload.joinEnabled ? [createTeamMember(state.currentUser.nickname)] : [],
         maxPeople: action.payload.maxPeople,
         chatMessages: [],
         historyLabel: '刚刚',
@@ -244,7 +254,7 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
       return {
         ...state,
         proposals: state.proposals.map((proposal) => {
-          if (proposal.id !== action.proposalId) {
+          if (proposal.id !== action.proposalId || !proposal.voteEnabled) {
             return proposal;
           }
 
@@ -277,7 +287,7 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
       return {
         ...state,
         proposals: state.proposals.map((proposal) => {
-          if (proposal.id !== action.proposalId) {
+          if (proposal.id !== action.proposalId || !proposal.joinEnabled || proposal.creatorNickname === currentUser.nickname) {
             return proposal;
           }
 
@@ -379,6 +389,27 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
       return {
         ...state,
         wheelOptions: [...state.wheelOptions, nextOption],
+      };
+    }
+
+    case 'addWheelOptions': {
+      const cleanNames = action.names.map((name) => name.trim()).filter(Boolean);
+
+      if (cleanNames.length === 0) {
+        return state;
+      }
+
+      const existing = new Set(state.wheelOptions.map((option) => option.name));
+      const nextOptions = cleanNames
+        .filter((name) => !existing.has(name))
+        .map((name, index) => ({
+          id: `wheel-batch-${Date.now()}-${index}`,
+          name,
+        }));
+
+      return {
+        ...state,
+        wheelOptions: [...state.wheelOptions, ...nextOptions],
       };
     }
 
@@ -702,6 +733,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           },
           setHistoryFilter: (filter) => dispatch({ type: 'setHistoryFilter', filter }),
           addWheelOption: (name) => dispatch({ type: 'addWheelOption', name }),
+          addWheelOptions: (names) => dispatch({ type: 'addWheelOptions', names }),
           removeWheelOption: (optionId) => dispatch({ type: 'removeWheelOption', optionId }),
           clearWheelOptions: () => dispatch({ type: 'clearWheelOptions' }),
           importWheelOptions: () => dispatch({ type: 'importWheelOptions' }),

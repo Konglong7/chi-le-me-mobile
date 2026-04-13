@@ -49,12 +49,16 @@ function formatRecentLabel(date: Date) {
   return `${date.getMonth() + 1}-${date.getDate()}`;
 }
 
-function deriveStatus(input: { teamCount: number; maxPeople: number; optionCount: number }) {
+function deriveStatus(input: { teamCount: number; maxPeople: number; optionCount: number; voteEnabled: boolean; joinEnabled: boolean }) {
+  if (!input.joinEnabled && !input.voteEnabled) {
+    return '组队中' as const;
+  }
+
   if (input.teamCount >= input.maxPeople) {
     return '已成团' as const;
   }
 
-  if (input.optionCount > 1) {
+  if (input.voteEnabled && input.optionCount > 1) {
     return '投票中' as const;
   }
 
@@ -116,6 +120,8 @@ export async function createPostgresRepositoryFromPool(pool: Pool): Promise<AppR
         eventLabel: proposalsTable.eventLabel,
         expectedPeople: proposalsTable.expectedPeople,
         remark: proposalsTable.remark,
+        voteEnabled: proposalsTable.voteEnabled,
+        joinEnabled: proposalsTable.joinEnabled,
         status: proposalsTable.status,
         voteMode: proposalsTable.voteMode,
         maxPeople: proposalsTable.maxPeople,
@@ -210,12 +216,16 @@ export async function createPostgresRepositoryFromPool(pool: Pool): Promise<AppR
         teamCount: teamMembers.length,
         maxPeople: proposalRow.maxPeople,
         optionCount: voteOptions.length,
+        voteEnabled: proposalRow.voteEnabled,
+        joinEnabled: proposalRow.joinEnabled,
       }),
       eventLabel: proposalRow.eventLabel ?? undefined,
       expectedPeopleLabel: proposalRow.expectedPeople ? `预计${proposalRow.expectedPeople}人` : undefined,
       targetName: proposalRow.targetName ?? undefined,
       address: proposalRow.address ?? undefined,
       remark: proposalRow.remark ?? undefined,
+      voteEnabled: proposalRow.voteEnabled,
+      joinEnabled: proposalRow.joinEnabled,
       voteMode: proposalRow.voteMode as Proposal['voteMode'],
       voteOptions,
       teamMembers,
@@ -360,30 +370,36 @@ export async function createPostgresRepositoryFromPool(pool: Pool): Promise<AppR
           eventLabel: toNullable(payload.eventLabel),
           expectedPeople: payload.maxPeople,
           remark: '新提案已发布，快来表态。',
-          status: payload.voteOptions.filter((item) => item.trim()).length > 1 ? '投票中' : '组队中',
+          voteEnabled: payload.voteEnabled,
+          joinEnabled: payload.joinEnabled,
+          status: payload.voteEnabled && payload.voteOptions.filter((item) => item.trim()).length > 1 ? '投票中' : '组队中',
           voteMode: 'single',
           maxPeople: payload.maxPeople,
           creatorUserId: userId,
         });
 
-        const optionValues = payload.voteOptions
+        const optionValues = payload.voteEnabled
+          ? payload.voteOptions
           .filter((item) => item.trim())
           .map((name, index) => ({
             id: `proposal-option-${randomUUID()}`,
             proposalId,
             name: name.trim(),
             sortOrder: index,
-          }));
+          }))
+          : [];
 
         if (optionValues.length > 0) {
           await tx.insert(proposalOptionsTable).values(optionValues);
         }
 
-        await tx.insert(proposalParticipantsTable).values({
-          proposalId,
-          userId,
-          isActive: true,
-        });
+        if (payload.joinEnabled) {
+          await tx.insert(proposalParticipantsTable).values({
+            proposalId,
+            userId,
+            isActive: true,
+          });
+        }
       });
 
       return mapProposalById(proposalId);
@@ -406,6 +422,12 @@ export async function createPostgresRepositoryFromPool(pool: Pool): Promise<AppR
         return null;
       }
 
+      const proposal = await mapProposalById(proposalId);
+
+      if (!proposal?.voteEnabled) {
+        return proposal;
+      }
+
       await db.transaction(async (tx) => {
         await tx.delete(proposalVotesTable).where(and(eq(proposalVotesTable.proposalId, proposalId), eq(proposalVotesTable.userId, userId)));
         await tx.insert(proposalVotesTable).values({
@@ -423,6 +445,12 @@ export async function createPostgresRepositoryFromPool(pool: Pool): Promise<AppR
 
       if (!userId) {
         return null;
+      }
+
+      const proposal = await mapProposalById(proposalId);
+
+      if (!proposal?.joinEnabled || proposal.creatorNickname === (await authenticate(token))?.nickname) {
+        return proposal;
       }
 
       const existing = await db

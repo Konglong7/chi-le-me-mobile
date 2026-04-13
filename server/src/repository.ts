@@ -44,11 +44,15 @@ function createAvatarSeed(nickname: string) {
 }
 
 function deriveStatus(proposal: Proposal): Proposal['status'] {
+  if (!proposal.joinEnabled && !proposal.voteEnabled) {
+    return '组队中';
+  }
+
   if (proposal.teamMembers.length >= proposal.maxPeople) {
     return '已成团';
   }
 
-  if (proposal.voteOptions.length > 1) {
+  if (proposal.voteEnabled && proposal.voteOptions.length > 1) {
     return '投票中';
   }
 
@@ -150,21 +154,27 @@ export function createMemoryRepository(): AppRepository {
         expectedPeopleLabel: `预计${payload.maxPeople}人`,
         targetName: payload.targetName.trim(),
         remark: '新提案已发布，快来表态。',
+        voteEnabled: payload.voteEnabled,
+        joinEnabled: payload.joinEnabled,
         voteMode: 'single',
-        voteOptions: payload.voteOptions
+        voteOptions: payload.voteEnabled
+          ? payload.voteOptions
           .filter((item) => item.trim())
           .map((item) => ({
             id: `proposal-option-${randomUUID()}`,
             name: item.trim(),
             voterNicknames: [],
-          })),
-        teamMembers: [
+          }))
+          : [],
+        teamMembers: payload.joinEnabled
+          ? [
           {
             nickname: user.nickname,
             avatarSeed: user.avatarSeed,
             isCreator: true,
           },
-        ],
+        ]
+          : [],
         maxPeople: payload.maxPeople,
         chatMessages: [],
         historyLabel: '刚刚',
@@ -193,7 +203,7 @@ export function createMemoryRepository(): AppRepository {
       }
 
       proposals = proposals.map((proposal) => {
-        if (proposal.id !== proposalId) {
+        if (proposal.id !== proposalId || !proposal.voteEnabled) {
           return proposal;
         }
 
@@ -220,7 +230,7 @@ export function createMemoryRepository(): AppRepository {
       }
 
       proposals = proposals.map((proposal) => {
-        if (proposal.id !== proposalId) {
+        if (proposal.id !== proposalId || !proposal.joinEnabled || proposal.creatorNickname === user.nickname) {
           return proposal;
         }
 

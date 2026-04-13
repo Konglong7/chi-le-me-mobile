@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FaAngleLeft, FaCircleMinus, FaCirclePlus } from 'react-icons/fa6';
 import { useAppStore } from '../app/store';
 import type { ProposalType } from '../app/types';
-import { AppShell, ScreenScroller } from '../components/layout';
+import { AppShell, BottomNav, ScreenScroller } from '../components/layout';
 import { PrimaryButton, SectionCard } from '../components/ui';
 
 export function CreateProposalScreen() {
@@ -12,11 +12,17 @@ export function CreateProposalScreen() {
   const [targetName, setTargetName] = useState('');
   const [eventLabel, setEventLabel] = useState('今天 18:30');
   const [maxPeople, setMaxPeople] = useState(4);
+  const [voteEnabled, setVoteEnabled] = useState(true);
+  const [joinEnabled, setJoinEnabled] = useState(true);
   const [voteOptions, setVoteOptions] = useState(['沙县小吃', '隆江猪脚饭']);
+
+  const addVoteOption = () => setVoteOptions((current) => [...current, '']);
+  const removeVoteOption = (index: number) =>
+    setVoteOptions((current) => current.filter((_, currentIndex) => currentIndex !== index));
 
   return (
     <AppShell>
-      <div className="absolute left-0 top-0 z-40 flex h-[88px] w-full items-end border-b border-slate-100 bg-white px-4 pb-3 shadow-sm">
+      <div className="absolute left-0 top-0 z-40 flex h-[72px] w-full items-end border-b border-slate-100 bg-white px-4 pb-3 shadow-sm">
         <div className="flex w-full items-center justify-between">
           <button type="button" onClick={() => actions.navigate('home')} className="p-2 text-xl">
             <FaAngleLeft />
@@ -26,7 +32,7 @@ export function CreateProposalScreen() {
         </div>
       </div>
 
-      <ScreenScroller className="bg-slate-50 px-4 pb-[100px] pt-[100px]">
+      <ScreenScroller className="bg-slate-50 px-4 pb-[172px] pt-[88px]">
         <SectionCard className="mb-4 p-4">
           <div className="mb-4">
             <label className="mb-2 block text-sm font-bold text-slate-700">
@@ -90,62 +96,107 @@ export function CreateProposalScreen() {
         <SectionCard className="mb-4 p-4">
           <div className="mb-4 flex items-center justify-between">
             <span className="font-bold text-slate-800">开启投票</span>
-            <div className="relative h-6 w-11 rounded-full bg-theme-500 shadow-inner">
-              <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-            {voteOptions.map((option, index) => (
-              <div key={index} className={index === 0 ? 'flex items-center gap-2' : 'flex items-center gap-2 border-t border-slate-200 pt-3'}>
-                <FaCircleMinus className="text-red-400" />
-                <input
-                  value={option}
-                  onChange={(event) =>
-                    setVoteOptions((current) => current.map((item, currentIndex) => (currentIndex === index ? event.target.value : item)))
-                  }
-                  className="flex-1 bg-transparent text-sm outline-none"
-                />
-              </div>
-            ))}
             <button
               type="button"
-              onClick={() => setVoteOptions((current) => [...current, ''])}
-              className="mt-3 flex items-center gap-2 text-sm font-medium text-theme-500"
+              role="switch"
+              aria-checked={voteEnabled}
+              aria-label="开启投票"
+              onClick={() => setVoteEnabled((current) => !current)}
+              className={`relative h-6 w-11 rounded-full shadow-inner transition ${voteEnabled ? 'bg-theme-500' : 'bg-slate-200'}`}
             >
-              <FaCirclePlus /> 添加选项
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+                  voteEnabled ? 'right-0.5' : 'left-0.5'
+                }`}
+              />
             </button>
           </div>
 
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-slate-600">单选 / 多选</span>
-            <span className="text-sm text-slate-800">单选</span>
-          </div>
+          {voteEnabled ? (
+            <>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                {voteOptions.map((option, index) => (
+                  <div
+                    key={index}
+                    className={index === 0 ? 'flex items-center gap-2' : 'flex items-center gap-2 border-t border-slate-200 pt-3'}
+                  >
+                    <button
+                      type="button"
+                      aria-label={`删除投票选项 ${index + 1}`}
+                      onClick={() => removeVoteOption(index)}
+                      className="text-red-400 disabled:cursor-not-allowed disabled:text-slate-300"
+                      disabled={voteOptions.length <= 1}
+                    >
+                      <FaCircleMinus />
+                    </button>
+                    <input
+                      aria-label={`投票选项 ${index + 1}`}
+                      value={option}
+                      onChange={(event) =>
+                        setVoteOptions((current) => current.map((item, currentIndex) => (currentIndex === index ? event.target.value : item)))
+                      }
+                      className="flex-1 bg-transparent text-sm outline-none"
+                    />
+                  </div>
+                ))}
+                <button type="button" aria-label="添加选项" onClick={addVoteOption} className="mt-3 flex items-center gap-2 text-sm font-medium text-theme-500">
+                  <FaCirclePlus /> 添加选项
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-sm text-slate-600">单选 / 多选</span>
+                <span className="text-sm text-slate-800">单选</span>
+              </div>
+            </>
+          ) : null}
         </SectionCard>
 
         <SectionCard className="p-4">
           <div className="mb-4 flex items-center justify-between">
             <span className="font-bold text-slate-800">开启组队报名</span>
-            <div className="relative h-6 w-11 rounded-full bg-theme-500 shadow-inner">
-              <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
-            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={joinEnabled}
+              aria-label="开启组队报名"
+              onClick={() => setJoinEnabled((current) => !current)}
+              className={`relative h-6 w-11 rounded-full shadow-inner transition ${joinEnabled ? 'bg-theme-500' : 'bg-slate-200'}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+                  joinEnabled ? 'right-0.5' : 'left-0.5'
+                }`}
+              />
+            </button>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-600">人数上限</span>
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setMaxPeople((current) => Math.max(2, current - 1))} className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                -
-              </button>
-              <span className="text-sm font-bold">{maxPeople}</span>
-              <button type="button" onClick={() => setMaxPeople((current) => current + 1)} className="flex h-6 w-6 items-center justify-center rounded-full bg-theme-50 text-theme-600">
-                +
-              </button>
+
+          {joinEnabled ? (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">人数上限</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMaxPeople((current) => Math.max(2, current - 1))}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+                >
+                  -
+                </button>
+                <span className="text-sm font-bold">{maxPeople}</span>
+                <button
+                  type="button"
+                  onClick={() => setMaxPeople((current) => current + 1)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-theme-50 text-theme-600"
+                >
+                  +
+                </button>
+              </div>
             </div>
-          </div>
+          ) : null}
         </SectionCard>
       </ScreenScroller>
 
-      <div className="absolute bottom-0 left-0 z-50 w-full border-t border-slate-100 bg-white p-4 pb-8">
+      <div className="absolute bottom-[84px] left-0 z-50 w-full border-t border-slate-100 bg-white p-4">
         <PrimaryButton
           type="button"
           onClick={() =>
@@ -155,6 +206,8 @@ export function CreateProposalScreen() {
               targetName,
               eventLabel,
               maxPeople,
+              voteEnabled,
+              joinEnabled,
               voteOptions,
             })
           }
@@ -163,6 +216,8 @@ export function CreateProposalScreen() {
           发布提案
         </PrimaryButton>
       </div>
+
+      <BottomNav currentPage="home" onNavigate={actions.navigate} />
     </AppShell>
   );
 }

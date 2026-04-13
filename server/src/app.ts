@@ -135,6 +135,8 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
       targetName: z.string().default(''),
       eventLabel: z.string().default(''),
       maxPeople: z.number().int().min(2).max(20),
+      voteEnabled: z.boolean().default(true),
+      joinEnabled: z.boolean().default(true),
       voteOptions: z.array(z.string()),
     });
 
@@ -259,6 +261,8 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
     if (!proposal) {
       return reply.code(404).send({ message: 'Proposal not found' });
     }
+
+    emitProposalUpdate(proposal);
 
     return proposal;
   });

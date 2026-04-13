@@ -89,7 +89,7 @@ export function HomeScreen() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {proposal.status !== '投票中' ? (
+                      {proposal.joinEnabled ? (
                         <button
                           type="button"
                           onClick={() => actions.toggleJoin(proposal.id)}

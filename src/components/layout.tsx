@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
-import { FaBatteryFull, FaHouse, FaRegClock, FaSignal, FaWifi } from 'react-icons/fa6';
+import { FaHouse, FaRegClock } from 'react-icons/fa6';
 import type { AppPage } from '../app/types';
 
 interface ShellProps {
@@ -25,22 +25,14 @@ export function AppShell({ children, className, statusLight = false, indicatorLi
           className,
         )}
       >
-        <StatusBar light={statusLight} />
-        <div className="absolute left-1/2 top-0 z-50 h-[30px] w-[120px] -translate-x-1/2 rounded-b-[16px] bg-slate-800" />
         {children}
-        <div
-          className={clsx(
-            'pointer-events-none absolute bottom-2 left-1/2 z-50 h-[5px] w-[140px] -translate-x-1/2 rounded-full',
-            indicatorLight ? 'bg-white' : 'bg-black',
-          )}
-        />
       </div>
     </div>
   );
 }
 
 export function ScreenScroller({ children, className }: { children: ReactNode; className?: string }) {
-  return <main className={clsx('relative flex-1 overflow-y-auto pt-11 hide-scrollbar', className)}>{children}</main>;
+  return <main className={clsx('relative flex-1 overflow-y-auto hide-scrollbar', className)}>{children}</main>;
 }
 
 export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavProps) {
@@ -66,6 +58,7 @@ export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavPr
           <button
             key={item.page}
             type="button"
+            aria-label={item.label}
             onClick={() => onNavigate(item.page)}
             className={clsx(
               'flex min-w-[64px] flex-col items-center gap-1 text-[11px] transition tap-effect',
@@ -77,24 +70,6 @@ export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavPr
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function StatusBar({ light = false }: { light?: boolean }) {
-  return (
-    <div
-      className={clsx(
-        'pointer-events-none absolute left-0 top-0 z-50 flex h-11 w-full items-center justify-between px-6 text-[14px] font-semibold',
-        light ? 'text-white' : 'text-black',
-      )}
-    >
-      <span>09:41</span>
-      <div className="flex items-center gap-1.5 text-xs">
-        <FaSignal />
-        <FaWifi />
-        <FaBatteryFull />
-      </div>
     </div>
   );
 }

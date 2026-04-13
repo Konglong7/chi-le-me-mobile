@@ -21,6 +21,8 @@ suite('postgres repository integration', () => {
       targetName: 'KFC',
       eventLabel: '今天 19:00',
       maxPeople: 3,
+      voteEnabled: true,
+      joinEnabled: true,
       voteOptions: ['KFC', '麦当劳'],
     });
 

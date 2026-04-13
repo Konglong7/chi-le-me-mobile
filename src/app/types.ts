@@ -50,6 +50,8 @@ export interface Proposal {
   targetName?: string;
   address?: string;
   remark?: string;
+  voteEnabled: boolean;
+  joinEnabled: boolean;
   voteMode: VoteMode;
   voteOptions: VoteOption[];
   teamMembers: TeamMember[];
@@ -101,6 +103,8 @@ export interface CreateProposalInput {
   targetName: string;
   eventLabel: string;
   maxPeople: number;
+  voteEnabled: boolean;
+  joinEnabled: boolean;
   voteOptions: string[];
 }
 

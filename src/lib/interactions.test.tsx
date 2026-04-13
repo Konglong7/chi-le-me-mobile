@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { App } from '../app/App';
 
 async function enterApp() {
@@ -29,6 +30,28 @@ describe('core product interactions', () => {
     expect(screen.getByText('今晚一起吃烧烤？')).toBeInTheDocument();
   });
 
+  it('lets users turn off vote/join settings, remove vote options, and keeps the tab bar visible on create screen', async () => {
+    const user = await enterApp();
+
+    await user.click(screen.getByRole('button', { name: '发起提案' }));
+
+    expect(screen.getByRole('button', { name: '首页' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '转盘' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '历史' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: '开启投票' }));
+    expect(screen.queryByText('添加选项')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: '开启投票' }));
+    await user.click(screen.getByRole('button', { name: '添加选项' }));
+    await user.type(screen.getByRole('textbox', { name: '投票选项 3' }), '麻辣烫');
+    await user.click(screen.getByRole('button', { name: '删除投票选项 3' }));
+    expect(screen.queryByRole('textbox', { name: '投票选项 3' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: '开启组队报名' }));
+    expect(screen.queryByText('人数上限')).not.toBeInTheDocument();
+  });
+
   it('supports voting, joining, and chatting inside proposal detail', async () => {
     const user = await enterApp();
 
@@ -44,6 +67,18 @@ describe('core product interactions', () => {
     await user.type(screen.getByPlaceholderText('说点什么...'), '俺也去，顺便帮我带瓶可乐。');
     await user.click(screen.getByRole('button', { name: '发送消息' }));
     expect(screen.getByText('俺也去，顺便帮我带瓶可乐。')).toBeInTheDocument();
+  });
+
+  it('does not allow the proposal creator to leave their own team', async () => {
+    const user = await enterApp();
+
+    await user.click(screen.getByRole('button', { name: '发起提案' }));
+    await user.type(screen.getByPlaceholderText('例如：今晚去吃什么？'), '发起人测试提案');
+    await user.click(screen.getByRole('button', { name: '发布提案' }));
+    await user.click(screen.getByRole('button', { name: '查看详情 发起人测试提案' }));
+
+    const button = screen.getByRole('button', { name: '发起人不可退出' });
+    expect(button).toBeDisabled();
   });
 
   it('publishes a food share and shows it in history', async () => {
@@ -66,5 +101,32 @@ describe('core product interactions', () => {
     const history = screen.getByRole('main');
     expect(within(history).getByText('深夜炸鸡套餐')).toBeInTheDocument();
     expect(within(history).getByText('深夜党福音，趁热吃很顶。')).toBeInTheDocument();
+  });
+
+  it('supports wheel quick presets and plays sound when spinning', async () => {
+    const user = await enterApp();
+    const oscillator = { connect: vi.fn(), start: vi.fn(), stop: vi.fn(), frequency: { value: 0 } };
+    const gainNode = { connect: vi.fn(), gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() } };
+    const audioContext = {
+      createOscillator: vi.fn(() => oscillator),
+      createGain: vi.fn(() => gainNode),
+      destination: {},
+      currentTime: 0,
+      resume: vi.fn(),
+    };
+
+    vi.stubGlobal('AudioContext', vi.fn(() => audioContext));
+    vi.stubGlobal('webkitAudioContext', vi.fn(() => audioContext));
+
+    await user.click(screen.getByRole('button', { name: '转盘' }));
+    await user.click(screen.getByRole('button', { name: '快捷导入 减肥套餐' }));
+
+    expect(screen.getAllByText('鸡胸肉沙拉').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('玉米紫薯杯').length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole('button', { name: '开始转盘' }));
+
+    expect(audioContext.createOscillator).toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

@@ -39,6 +39,8 @@ export const proposalsTable = pgTable('chi_le_me_proposals', {
   eventLabel: text('event_label'),
   expectedPeople: integer('expected_people'),
   remark: text('remark'),
+  voteEnabled: boolean('vote_enabled').notNull().default(true),
+  joinEnabled: boolean('join_enabled').notNull().default(true),
   status: text('status').notNull(),
   voteMode: text('vote_mode').notNull(),
   maxPeople: integer('max_people').notNull(),

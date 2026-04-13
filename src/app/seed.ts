@@ -15,6 +15,8 @@ export function createSeedState(): PersistedState {
         eventLabel: '截止: 18:00',
         expectedPeopleLabel: '预计3人',
         remark: '大家都说一下想吃啥，少数服从多数哈~ 懒得下楼了。',
+        voteEnabled: true,
+        joinEnabled: true,
         voteMode: 'single',
         voteOptions: [
           {
@@ -62,6 +64,8 @@ export function createSeedState(): PersistedState {
         eventLabel: '今晚 19:00',
         targetName: '海底捞南山店',
         remark: '晚饭冲一波火锅，四人成团。',
+        voteEnabled: false,
+        joinEnabled: true,
         voteMode: 'single',
         voteOptions: [
           {

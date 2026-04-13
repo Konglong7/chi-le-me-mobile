@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FaAngleRight, FaCamera, FaLocationDot, FaSackDollar, FaStore, FaXmark } from 'react-icons/fa6';
 import { useAppStore } from '../app/store';
-import { AppShell, ScreenScroller } from '../components/layout';
+import { AppShell, BottomNav, ScreenScroller } from '../components/layout';
 
 export function ShareScreen() {
   const { actions } = useAppStore();
@@ -14,7 +14,7 @@ export function ShareScreen() {
 
   return (
     <AppShell>
-      <div className="absolute left-0 top-0 z-40 flex h-[88px] w-full items-end border-b border-slate-100 bg-white px-4 pb-3">
+      <div className="absolute left-0 top-0 z-40 flex h-[72px] w-full items-end border-b border-slate-100 bg-white px-4 pb-3">
         <div className="flex w-full items-center justify-between">
           <button type="button" onClick={() => actions.navigate('home')} className="p-2 text-xl">
             <FaXmark />
@@ -39,7 +39,7 @@ export function ShareScreen() {
         </div>
       </div>
 
-      <ScreenScroller className="px-6 pb-8 pt-[100px]">
+      <ScreenScroller className="px-6 pb-[108px] pt-[88px]">
         <div className="mb-6 flex h-40 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:bg-slate-100">
           <FaCamera className="mb-2 text-3xl" />
           <span className="text-sm">添加美食照片 (可选)</span>
@@ -118,6 +118,8 @@ export function ShareScreen() {
           </div>
         </div>
       </ScreenScroller>
+
+      <BottomNav currentPage="home" onNavigate={actions.navigate} />
     </AppShell>
   );
 }

@@ -15,6 +15,7 @@ describe('App shell', () => {
     expect(screen.getByRole('heading', { name: '今天吃什么？' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('输入你的干饭昵称 (必填)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '进入干饭圈' })).toBeInTheDocument();
+    expect(screen.queryByText('09:41')).not.toBeInTheDocument();
   });
 
   it('enters the app and stores the nickname locally', async () => {

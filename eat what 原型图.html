@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“吃什么” 决策分享 App 原型</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        theme: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444', // 主色调
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 隐藏全局滚动条，但允许滚动 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8; 
+        }
+        
+        body {
+            background-color: #e5e7eb;
+            margin: 0;
+            padding: 40px;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        /* 手机边框模拟 */
+        .phone-frame {
+            width: 430px;
+            height: 932px;
+            background-color: #f8fafc;
+            border: 14px solid #1f2937;
+            border-radius: 50px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), inset 0 0 0 2px #374151;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            scroll-margin: 40px; /* 滚动定位时的边距 */
+        }
+
+        /* 刘海屏 / 状态栏 */
+        .status-bar {
+            height: 44px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            z-index: 50;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 30px;
+            background-color: #1f2937;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            z-index: 51;
+        }
+
+        /* 底部安全区指示条 */
+        .home-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 5px;
+            background-color: #000;
+            border-radius: 10px;
+            z-index: 50;
+        }
+
+        /* 页面内容区 */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-top: 44px; /* 避开状态栏 */
+            padding-bottom: 90px; /* 避开底部导航和安全区 */
+            /* 隐藏内部滚动条 */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        .page-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 84px; /* 包含安全区 */
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-around;
+            padding-top: 10px;
+            padding-bottom: 24px; /* 安全区 padding */
+            z-index: 40;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 10px;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-item.active {
+            color: #ef4444; /* 主题红 */
+        }
+        .nav-item i {
+            font-size: 20px;
+        }
+
+        /* 幸运转盘 CSS 绘制 */
+        .wheel {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #ef4444 0deg 60deg, 
+                #f87171 60deg 120deg, 
+                #fca5a5 120deg 180deg, 
+                #ef4444 180deg 240deg, 
+                #f87171 240deg 300deg, 
+                #fca5a5 300deg 360deg
+            );
+            border: 4px solid #fff;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+            position: relative;
+        }
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #ef4444;
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #1f2937;
+            z-index: 10;
+        }
+
+        /* 交互特效 */
+        .tap-effect:active {
+            transform: scale(0.96);
+        }
+
+        .fab-menu {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: bottom right;
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+            pointer-events: none;
+        }
+        .fab-menu.open {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶层容器，允许水平/换行展示所有页面 -->
+    <div class="flex flex-wrap gap-10 justify-center min-w-max pb-10">
+
+        <!-- ==================== 1. 昵称进入页 ==================== -->
+        <div id="page-1" class="phone-frame bg-white">
+            <div class="status-bar text-black"><span class="time">09:41</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <div class="page-content flex flex-col items-center justify-center h-full pb-0 bg-gradient-to-b from-theme-50 to-white px-8">
+                <!-- Logo 区 -->
+                <div class="w-24 h-24 bg-gradient-to-tr from-theme-600 to-theme-400 rounded-3xl shadow-lg shadow-theme-500/30 flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-utensils text-4xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">今天吃什么？</h1>
+                <p class="text-gray-500 text-sm mb-12 text-center">告别选择困难，和朋友一起愉快地决定干饭目标！</p>
+
+                <!-- 输入区 -->
+                <div class="w-full space-y-4">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-user text-gray-400"></i>
+                        </div>
+                        <input type="text" placeholder="输入你的干饭昵称 (必填)" class="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme-500 focus:border-transparent text-gray-700 transition">
+                    </div>
+                    <button onclick="navTo('page-2')" class="tap-effect w-full py-4 bg-gradient-to-r from-theme-600 to-theme-400 text-white rounded-2xl font-bold text-lg shadow-lg shadow-theme-500/30">
+                        进入干饭圈
+                    </button>
+                    <p class="text-xs text-gray-400 text-center mt-4"><i class="fa-solid fa-shield-halved mr-1"></i>首次输入后保存在本地，下次自动进入</p>
+                </div>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+        <!-- ==================== 2. 首页 ==================== -->
+        <div id="page-2" class="phone-frame bg-gray-50">
+            <!-- Header (自定义红色头部) -->
+            <div class="absolute top-0 w-full h-44 bg-gradient-to-br from-theme-600 to-theme-500 rounded-b-[40px] z-0"></div>
+            <div class="status-bar text-white"><span class="time">09:41</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <div class="page-content z-10 relative px-4 pt-16">
+                <!-- 顶部栏 -->
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-white text-2xl font-bold">一起吃点啥</h2>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-2 cursor-pointer tap-effect" onclick="navTo('page-8')">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-6 h-6 rounded-full bg-white">
+                        <span class="text-white text-sm font-medium">麻辣小王子</span>
+                        <i class="fa-solid fa-angle-right text-white/70 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- 快捷操作区 -->
+                <div class="flex gap-4 mb-6">
+                    <div onclick="navTo('page-3')" class="tap-effect flex-1 bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 cursor-pointer">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fa-solid fa-flag text-blue-500 text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">发起提案</div>
+                            <div class="text-xs text-gray-400">召集好友干饭</div>
+                        </div>
+                    </div>
+                    <div onclick="navTo('page-5')" class="tap-effect flex-1 bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 cursor-pointer">
+                        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                            <i class="fa-solid fa-dharmachakra text-orange-500 text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">幸运转盘</div>
+                            <div class="text-xs text-gray-400">选择困难救星</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提案状态切换 & 筛选 -->
+                <div class="flex justify-between items-end mb-4">
+                    <div class="flex gap-4 border-b border-gray-200">
+                        <div class="pb-2 text-theme-600 font-bold border-b-2 border-theme-600 text-lg">进行中</div>
+                        <div class="pb-2 text-gray-400 font-medium text-lg">已结束</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded-md">全部</span>
+                        <span class="text-xs px-2 py-1 bg-white text-gray-400 border border-gray-200 rounded-md">到店</span>
+                    </div>
+                </div>
+
+                <!-- 提案列表 -->
+                <div class="space-y-4 mb-8">
+                    <!-- 卡片 1：投票中 -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative overflow-hidden tap-effect cursor-pointer" onclick="navTo('page-4')">
+                        <div class="absolute top-0 right-0 bg-yellow-100 text-yellow-600 text-xs px-3 py-1 rounded-bl-xl font-bold">投票中</div>
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-100 p-1"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Annie" class="w-full h-full rounded-full"></div>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-base">今晚一起吃沙县还是隆江猪脚饭？</h3>
+                                <div class="text-xs text-gray-400 mt-0.5">发起人: 吃货小美 · 10分钟前</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <span class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-500 rounded border border-blue-100">外卖</span>
+                            <span class="text-[10px] px-2 py-0.5 bg-gray-50 text-gray-500 rounded border border-gray-100">预计3人</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-3 border-t border-gray-50">
+                            <div class="flex -space-x-2">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=A" class="w-6 h-6 rounded-full border-2 border-white bg-gray-200">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=B" class="w-6 h-6 rounded-full border-2 border-white bg-gray-200">
+                                <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">+2</div>
+                            </div>
+                            <button class="bg-theme-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md shadow-theme-500/20">查看详情</button>
+                        </div>
+                    </div>
+
+                    <!-- 卡片 2：组队中 -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-green-100 text-green-600 text-xs px-3 py-1 rounded-bl-xl font-bold">组队中 (2/4)</div>
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-100 p-1"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bob" class="w-full h-full rounded-full"></div>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-base">海底捞南山店走起！</h3>
+                                <div class="text-xs text-gray-400 mt-0.5">发起人: 火锅杀手 · 1小时前</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <span class="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-500 rounded border border-purple-100">到店</span>
+                            <span class="text-[10px] px-2 py-0.5 bg-gray-50 text-gray-500 rounded border border-gray-100">今晚 19:00</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-3 border-t border-gray-50">
+                            <div class="text-xs text-gray-500">还差 <span class="text-theme-500 font-bold">2</span> 人成团</div>
+                            <button class="bg-gray-100 text-gray-800 px-4 py-1.5 rounded-full text-sm font-bold">我要去</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近分享 -->
+                <div class="mb-2">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gray-800">最近分享</h3>
+                        <span class="text-xs text-gray-400" onclick="navTo('page-7')">查看更多 <i class="fa-solid fa-angle-right"></i></span>
+                    </div>
+                    <div class="flex gap-3 overflow-x-auto pb-4 hide-scroll">
+                        <div class="min-w-[140px] bg-white rounded-xl p-3 shadow-sm border border-gray-50">
+                            <div class="text-sm font-bold text-gray-800 truncate mb-1">Manner 冰拿铁</div>
+                            <div class="flex text-yellow-400 text-[10px] mb-2"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                            <div class="text-xs text-gray-400 flex items-center gap-1"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=C" class="w-4 h-4 rounded-full"> 阿西巴分享</div>
+                        </div>
+                        <div class="min-w-[140px] bg-white rounded-xl p-3 shadow-sm border border-gray-50">
+                            <div class="text-sm font-bold text-gray-800 truncate mb-1">塔斯汀汉堡套餐</div>
+                            <div class="flex text-yellow-400 text-[10px] mb-2"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                            <div class="text-xs text-gray-400 flex items-center gap-1"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=D" class="w-4 h-4 rounded-full"> 王大锤分享</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 悬浮主按钮 (+) 及菜单 -->
+            <div class="absolute bottom-[100px] right-4 z-50 flex flex-col items-end">
+                <div id="fabMenu" class="fab-menu bg-white rounded-2xl shadow-xl border border-gray-100 p-2 mb-3 w-36">
+                    <div onclick="navTo('page-3'); toggleFab()" class="p-3 text-sm text-gray-700 font-medium hover:bg-gray-50 rounded-xl cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-flag text-blue-500 w-5 text-center"></i> 发起提案
+                    </div>
+                    <div class="h-px bg-gray-100 mx-2"></div>
+                    <div onclick="navTo('page-6'); toggleFab()" class="p-3 text-sm text-gray-700 font-medium hover:bg-gray-50 rounded-xl cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-camera-retro text-orange-500 w-5 text-center"></i> 分享美食
+                    </div>
+                </div>
+                <button onclick="toggleFab()" class="w-14 h-14 bg-gradient-to-tr from-theme-600 to-theme-400 rounded-full shadow-[0_8px_20px_rgba(239,68,68,0.4)] flex items-center justify-center text-white text-2xl tap-effect transition-transform" id="fabBtn">
+                    <i class="fa-solid fa-plus transition-transform duration-300" id="fabIcon"></i>
+                </button>
+            </div>
+
+            <!-- 底部导航 (首页) -->
+            <div class="bottom-nav">
+                <div class="nav-item active">
+                    <i class="fa-solid fa-house"></i><span>首页</span>
+                </div>
+                <div class="nav-item" onclick="navTo('page-5')">
+                    <i class="fa-solid fa-dharmachakra"></i><span>转盘</span>
+                </div>
+                <div class="nav-item" onclick="navTo('page-7')">
+                    <i class="fa-solid fa-clock-rotate-left"></i><span>历史</span>
+                </div>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+        <!-- ==================== 3. 发起提案页 ==================== -->
+        <div id="page-3" class="phone-frame bg-gray-50">
+            <div class="status-bar text-black"><span class="time">09:42</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <!-- Header -->
+            <div class="absolute top-0 w-full h-[88px] bg-white z-40 flex items-end pb-3 px-4 shadow-sm">
+                <div class="flex items-center justify-between w-full">
+                    <i class="fa-solid fa-angle-left text-xl p-2 cursor-pointer" onclick="navTo('page-2')"></i>
+                    <h2 class="text-lg font-bold">发起干饭提案</h2>
+                    <div class="w-8"></div> <!-- 占位保持居中 -->
+                </div>
+            </div>
+
+            <div class="page-content pt-[100px] px-4 pb-[100px]">
+                <!-- 基础信息 -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">提案标题 <span class="text-red-500">*</span></label>
+                        <input type="text" placeholder="例如：今晚去吃什么？" class="w-full border-b border-gray-200 py-2 focus:outline-none focus:border-theme-500 text-gray-800">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">提案类型 <span class="text-red-500">*</span></label>
+                        <div class="flex gap-3">
+                            <div class="flex-1 text-center py-2 bg-theme-50 text-theme-600 border border-theme-200 rounded-lg text-sm font-medium">到店</div>
+                            <div class="flex-1 text-center py-2 bg-gray-50 text-gray-500 border border-gray-200 rounded-lg text-sm">外卖</div>
+                            <div class="flex-1 text-center py-2 bg-gray-50 text-gray-500 border border-gray-200 rounded-lg text-sm">随机征集</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                            <span class="text-sm text-gray-600">目标名称</span>
+                            <input type="text" placeholder="店名/外卖名 (可选)" class="text-right text-sm focus:outline-none w-48">
+                        </div>
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                            <span class="text-sm text-gray-600">时间安排</span>
+                            <div class="text-sm text-gray-400 flex items-center gap-1">今天 18:30 <i class="fa-solid fa-angle-right"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 投票设置 -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-bold text-gray-800">开启投票</span>
+                        <div class="w-11 h-6 bg-theme-500 rounded-full relative shadow-inner">
+                            <div class="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 shadow"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-minus text-red-400"></i>
+                            <input type="text" value="沙县小吃" class="flex-1 bg-transparent text-sm focus:outline-none">
+                        </div>
+                        <div class="flex items-center gap-2 border-t border-gray-200 pt-3">
+                            <i class="fa-solid fa-circle-minus text-red-400"></i>
+                            <input type="text" value="隆江猪脚饭" class="flex-1 bg-transparent text-sm focus:outline-none">
+                        </div>
+                        <div class="flex items-center gap-2 border-t border-gray-200 pt-3 text-theme-500 text-sm font-medium">
+                            <i class="fa-solid fa-circle-plus"></i> 添加选项
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-4">
+                        <span class="text-sm text-gray-600">单选 / 多选</span>
+                        <span class="text-sm text-gray-800">单选 <i class="fa-solid fa-angle-right text-gray-400 ml-1"></i></span>
+                    </div>
+                </div>
+
+                <!-- 组队设置 -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-bold text-gray-800">开启组队报名</span>
+                        <div class="w-11 h-6 bg-theme-500 rounded-full relative shadow-inner">
+                            <div class="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 shadow"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">人数上限</span>
+                        <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">-</div>
+                            <span class="text-sm font-bold">4</span>
+                            <div class="w-6 h-6 rounded-full bg-theme-50 text-theme-600 flex items-center justify-center">+</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="absolute bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 pb-8 z-50">
+                <button onclick="navTo('page-4')" class="w-full py-3.5 bg-theme-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-theme-500/30 tap-effect">
+                    发布提案
+                </button>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+        <!-- ==================== 4. 提案详情页 ==================== -->
+        <div id="page-4" class="phone-frame bg-gray-50">
+            <div class="status-bar text-black"><span class="time">09:45</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <!-- Header -->
+            <div class="absolute top-0 w-full h-[88px] bg-white/90 backdrop-blur z-40 flex items-end pb-3 px-4 shadow-sm border-b border-gray-100">
+                <div class="flex items-center justify-between w-full">
+                    <i class="fa-solid fa-angle-left text-xl p-2 cursor-pointer" onclick="navTo('page-2')"></i>
+                    <h2 class="text-lg font-bold truncate max-w-[200px]">今晚一起吃沙县...</h2>
+                    <i class="fa-solid fa-share-nodes text-lg p-2"></i>
+                </div>
+            </div>
+
+            <div class="page-content pt-[88px] px-0 pb-[80px]">
+                
+                <!-- 摘要卡片 -->
+                <div class="bg-white p-5 pt-6 rounded-b-3xl shadow-sm mb-4 relative">
+                    <div class="absolute top-4 right-4 bg-yellow-100 text-yellow-600 px-2 py-1 rounded text-xs font-bold border border-yellow-200">投票中</div>
+                    <h1 class="text-xl font-bold text-gray-800 mb-3 pr-16">今晚一起吃沙县还是隆江猪脚饭？</h1>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Annie" class="w-6 h-6 rounded-full bg-gray-100">
+                        <span class="text-sm text-gray-600">吃货小美</span>
+                        <span class="text-xs text-gray-400 ml-2">发起于 10分钟前</span>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="text-xs px-2 py-1 bg-blue-50 text-blue-500 rounded">外卖</span>
+                        <span class="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded flex items-center gap-1"><i class="fa-regular fa-clock"></i> 截止: 18:00</span>
+                    </div>
+                    
+                    <div class="text-sm text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        备注：大家都说一下想吃啥，少数服从多数哈~ 懒得下楼了。
+                    </div>
+                </div>
+
+                <!-- 投票区 -->
+                <div class="px-4 mb-4">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-gray-800">方案投票 (单选)</h3>
+                            <span class="text-xs text-gray-400">已投 2/3</span>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <!-- 选项1: 已选 -->
+                            <div class="relative border border-theme-500 rounded-xl p-3 bg-theme-50 cursor-pointer overflow-hidden">
+                                <div class="absolute top-0 left-0 h-full bg-theme-100 w-[66%] z-0"></div>
+                                <div class="relative z-10 flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-circle-check text-theme-500 text-lg"></i>
+                                        <span class="text-theme-700 font-bold text-sm">沙县小吃</span>
+                                    </div>
+                                    <div class="text-theme-600 font-bold text-sm">2票</div>
+                                </div>
+                            </div>
+                            <!-- 选项2 -->
+                            <div class="relative border border-gray-200 rounded-xl p-3 bg-white cursor-pointer overflow-hidden">
+                                <div class="absolute top-0 left-0 h-full bg-gray-100 w-[33%] z-0"></div>
+                                <div class="relative z-10 flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-regular fa-circle text-gray-300 text-lg"></i>
+                                        <span class="text-gray-700 text-sm">隆江猪脚饭</span>
+                                    </div>
+                                    <div class="text-gray-500 text-sm">1票</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 py-2 bg-theme-50 text-theme-600 rounded-lg font-bold text-sm border border-theme-200">修改投票</button>
+                    </div>
+                </div>
+
+                <!-- 组队区 -->
+                <div class="px-4 mb-4">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-gray-800">参与小队 (3/4)</h3>
+                            <button class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-medium">退出组队</button>
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto pb-2">
+                            <div class="flex flex-col items-center gap-1">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Annie" class="w-10 h-10 rounded-full border-2 border-yellow-400 bg-gray-100 p-0.5">
+                                <span class="text-[10px] text-gray-500 w-12 text-center truncate">小美</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=B" class="w-10 h-10 rounded-full bg-gray-100">
+                                <span class="text-[10px] text-gray-500 w-12 text-center truncate">阿强</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-10 h-10 rounded-full bg-gray-100 relative">
+                                <span class="absolute bottom-4 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                                <span class="text-[10px] text-gray-800 font-bold w-12 text-center truncate">我</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-10 h-10 rounded-full border border-dashed border-gray-300 flex items-center justify-center text-gray-300">
+                                    <i class="fa-solid fa-user-plus text-xs"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-400">待加入</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 聊天区 -->
+                <div class="px-4">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 h-64 flex flex-col">
+                        <h3 class="font-bold text-gray-800 mb-3 text-sm flex items-center gap-2"><i class="fa-regular fa-comments text-theme-500"></i> 讨论板</h3>
+                        
+                        <div class="flex-1 overflow-y-auto space-y-3 pr-2">
+                            <!-- 别人 -->
+                            <div class="flex gap-2 items-start">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Annie" class="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0">
+                                <div class="bg-gray-100 text-gray-800 text-sm px-3 py-2 rounded-tr-xl rounded-br-xl rounded-bl-xl max-w-[80%]">
+                                    我投了沙县，主要是想吃蒸饺了。
+                                </div>
+                            </div>
+                            <!-- 自己 -->
+                            <div class="flex gap-2 items-start flex-row-reverse">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0">
+                                <div class="bg-theme-500 text-white text-sm px-3 py-2 rounded-tl-xl rounded-bl-xl rounded-br-xl max-w-[80%] shadow-sm">
+                                    我也沙县吧，猪脚饭有点腻今天。
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部输入框 (模拟) -->
+            <div class="absolute bottom-0 left-0 w-full p-3 bg-white border-t border-gray-100 pb-8 z-50 flex gap-2 items-center">
+                <input type="text" placeholder="说点什么..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none">
+                <button class="w-10 h-10 bg-theme-500 text-white rounded-full flex items-center justify-center shadow-md tap-effect"><i class="fa-solid fa-paper-plane text-sm"></i></button>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+        <!-- ==================== 5. 幸运转盘页 ==================== -->
+        <div id="page-5" class="phone-frame bg-gray-900 text-white">
+            <!-- 沉浸式深色背景 -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-700 via-gray-900 to-black z-0"></div>
+            
+            <div class="status-bar text-white"><span class="time">09:48</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <div class="page-content z-10 relative px-6 flex flex-col items-center">
+                <h2 class="text-2xl font-bold mt-4 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">纠结终结者</h2>
+                <p class="text-gray-400 text-xs mb-10">把命运交给转盘，抽到啥吃啥</p>
+
+                <!-- 转盘区域 -->
+                <div class="relative w-[300px] h-[300px] mb-12">
+                    <div class="wheel transition-transform duration-[3000ms] ease-out" id="spinWheel" style="transform: rotate(45deg);">
+                        <!-- 文字叠加层比较复杂，这里用简化的视觉效果代替具体文字定位 -->
+                        <div class="absolute inset-0 rounded-full border-8 border-gray-800/50 shadow-[0_0_50px_rgba(239,68,68,0.3)]"></div>
+                    </div>
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel-center shadow-lg shadow-red-500/50 cursor-pointer tap-effect" onclick="spinIt()">
+                        <span class="text-lg leading-none">抽!</span>
+                    </div>
+                </div>
+
+                <!-- 选项编辑区 -->
+                <div class="w-full bg-white/10 backdrop-blur-md rounded-3xl p-5 border border-white/10">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-bold text-sm text-gray-200">当前选项 (6)</span>
+                        <div class="flex gap-2">
+                            <span class="text-xs bg-white/20 px-2 py-1 rounded cursor-pointer"><i class="fa-solid fa-file-import"></i> 历史导入</span>
+                            <span class="text-xs text-theme-400 px-2 py-1 cursor-pointer">清空</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+                        <div class="bg-gray-800/80 px-3 py-1.5 rounded-full text-sm border border-gray-700 flex items-center gap-2">
+                            KFC <i class="fa-solid fa-xmark text-gray-500 text-xs"></i>
+                        </div>
+                        <div class="bg-gray-800/80 px-3 py-1.5 rounded-full text-sm border border-gray-700 flex items-center gap-2">
+                            麦当劳 <i class="fa-solid fa-xmark text-gray-500 text-xs"></i>
+                        </div>
+                        <div class="bg-gray-800/80 px-3 py-1.5 rounded-full text-sm border border-gray-700 flex items-center gap-2">
+                            黄焖鸡米饭 <i class="fa-solid fa-xmark text-gray-500 text-xs"></i>
+                        </div>
+                        <div class="bg-gray-800/80 px-3 py-1.5 rounded-full text-sm border border-gray-700 flex items-center gap-2">
+                            轻食沙拉 <i class="fa-solid fa-xmark text-gray-500 text-xs"></i>
+                        </div>
+                        <div class="bg-gray-800/80 px-3 py-1.5 rounded-full text-sm border border-gray-700 flex items-center gap-2">
+                            随便 <i class="fa-solid fa-xmark text-gray-500 text-xs"></i>
+                        </div>
+                        <div class="bg-theme-500/20 text-theme-400 border border-theme-500/30 px-3 py-1.5 rounded-full text-sm flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-plus"></i> 添加
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部导航 (转盘) -->
+            <div class="bottom-nav bg-gray-900/90 border-gray-800">
+                <div class="nav-item" onclick="navTo('page-2')">
+                    <i class="fa-solid fa-house text-gray-500"></i><span class="text-gray-500">首页</span>
+                </div>
+                <div class="nav-item active text-theme-500">
+                    <i class="fa-solid fa-dharmachakra"></i><span>转盘</span>
+                </div>
+                <div class="nav-item" onclick="navTo('page-7')">
+                    <i class="fa-solid fa-clock-rotate-left text-gray-500"></i><span class="text-gray-500">历史</span>
+                </div>
+            </div>
+            <div class="home-indicator bg-white"></div>
+        </div>
+
+        <!-- ==================== 6. 分享美食页 ==================== -->
+        <div id="page-6" class="phone-frame bg-white">
+            <div class="status-bar text-black"><span class="time">09:50</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <!-- Header -->
+            <div class="absolute top-0 w-full h-[88px] bg-white z-40 flex items-end pb-3 px-4 border-b border-gray-100">
+                <div class="flex items-center justify-between w-full">
+                    <i class="fa-solid fa-xmark text-xl p-2 cursor-pointer" onclick="navTo('page-2')"></i>
+                    <h2 class="text-lg font-bold">分享我吃过的</h2>
+                    <button class="text-theme-500 font-bold text-sm bg-theme-50 px-3 py-1 rounded-full" onclick="navTo('page-7')">发布</button>
+                </div>
+            </div>
+
+            <div class="page-content pt-[100px] px-6">
+                <!-- 图片占位 (虽然提示说不强制做，但放个UI提升保真度) -->
+                <div class="w-full h-40 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center text-gray-400 mb-6 cursor-pointer hover:bg-gray-100 transition">
+                    <i class="fa-solid fa-camera text-3xl mb-2"></i>
+                    <span class="text-sm">添加美食照片 (可选)</span>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <input type="text" placeholder="美食名称（必填，如：原味冰拿铁）" class="w-full text-lg font-bold border-b border-gray-200 pb-2 focus:outline-none focus:border-theme-500 placeholder-gray-300">
+                    </div>
+                    
+                    <div class="flex items-center gap-3 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-store text-gray-400 w-5 text-center"></i>
+                        <input type="text" placeholder="商家店名 (可选)" class="flex-1 text-sm focus:outline-none">
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-sack-dollar text-gray-400 w-5 text-center"></i>
+                        <input type="number" placeholder="人均价格 ￥ (可选)" class="flex-1 text-sm focus:outline-none">
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-location-dot text-gray-400 w-5 text-center"></i>
+                        <div class="flex-1 text-sm text-gray-400 flex items-center justify-between">
+                            <span>所在位置</span>
+                            <i class="fa-solid fa-angle-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <div class="text-sm font-bold text-gray-700 mb-3">综合评分</div>
+                        <div class="flex gap-2 text-2xl text-gray-200">
+                            <i class="fa-solid fa-star text-yellow-400"></i>
+                            <i class="fa-solid fa-star text-yellow-400"></i>
+                            <i class="fa-solid fa-star text-yellow-400"></i>
+                            <i class="fa-solid fa-star text-yellow-400"></i>
+                            <i class="fa-solid fa-star cursor-pointer hover:text-yellow-400 transition"></i>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <textarea placeholder="随便说点什么评价一下吧... 味道怎么样？环境好吗？" class="w-full bg-gray-50 rounded-xl p-4 text-sm focus:outline-none focus:ring-1 focus:ring-theme-500 h-28 resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+        <!-- ==================== 7. 历史记录页 ==================== -->
+        <div id="page-7" class="phone-frame bg-gray-50">
+            <div class="status-bar text-black"><span class="time">09:52</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <!-- Header -->
+            <div class="absolute top-0 w-full h-[88px] bg-white z-40 flex items-end pb-3 px-4 shadow-sm">
+                <div class="flex items-center justify-center w-full relative">
+                    <h2 class="text-lg font-bold">我的足迹</h2>
+                </div>
+            </div>
+
+            <div class="page-content pt-[88px] px-0">
+                <!-- 筛选 Tabs -->
+                <div class="flex bg-white px-4 border-b border-gray-100 sticky top-0 z-30">
+                    <div class="py-3 flex-1 text-center text-sm font-bold text-theme-600 border-b-2 border-theme-600">全部</div>
+                    <div class="py-3 flex-1 text-center text-sm text-gray-500">参与的提案</div>
+                    <div class="py-3 flex-1 text-center text-sm text-gray-500">我的分享</div>
+                </div>
+
+                <div class="p-4 space-y-4">
+                    <!-- 历史提案卡片 -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">历史提案</span>
+                            <span class="text-xs text-gray-400">昨天 12:00</span>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-base mb-2">中午工作餐拼单</h3>
+                        <div class="flex items-center gap-2 mb-3 bg-gray-50 p-2 rounded-lg">
+                            <span class="text-xs text-gray-500">最终决定:</span>
+                            <span class="text-sm font-bold text-theme-600">肯德基疯狂星期四</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <div class="flex -space-x-1">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=A" class="w-5 h-5 rounded-full border border-white">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=B" class="w-5 h-5 rounded-full border border-white">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=C" class="w-5 h-5 rounded-full border border-white">
+                                <span class="text-xs text-gray-500 ml-2">等4人参与</span>
+                            </div>
+                            <button class="text-theme-500 text-xs border border-theme-500 px-3 py-1 rounded-full">再次发起</button>
+                        </div>
+                    </div>
+
+                    <!-- 历史分享卡片 -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded">我的分享</span>
+                            <span class="text-xs text-gray-400">周二</span>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center text-gray-300 flex-shrink-0">
+                                <i class="fa-solid fa-image"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-bold text-gray-800 text-sm mb-1">Manner 冰拿铁</h3>
+                                <div class="flex text-yellow-400 text-[10px] mb-1"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+                                <div class="text-xs text-gray-500 line-clamp-2 mb-2">每天早上都要来一杯续命，自带杯减5块很划算。</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-gray-50">
+                            <button class="text-gray-500 text-xs border border-gray-200 px-3 py-1 rounded-full">加入转盘</button>
+                            <button class="text-blue-500 text-xs border border-blue-500 px-3 py-1 rounded-full">引用为提案</button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center text-xs text-gray-400 mt-6">- 没有更多记录了 -</div>
+                </div>
+            </div>
+
+            <!-- 底部导航 (历史) -->
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="navTo('page-2')">
+                    <i class="fa-solid fa-house"></i><span>首页</span>
+                </div>
+                <div class="nav-item" onclick="navTo('page-5')">
+                    <i class="fa-solid fa-dharmachakra"></i><span>转盘</span>
+                </div>
+                <div class="nav-item active">
+                    <i class="fa-solid fa-clock-rotate-left"></i><span>历史</span>
+                </div>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+        <!-- ==================== 8. 昵称/轻设置页 (作为弹层或独立页) ==================== -->
+        <div id="page-8" class="phone-frame bg-gray-50">
+            <div class="status-bar text-black"><span class="time">09:55</span><div class="flex gap-1.5"><i class="fa-solid fa-signal text-xs"></i><i class="fa-solid fa-wifi text-xs"></i><i class="fa-solid fa-battery-full text-xs"></i></div></div><div class="notch"></div>
+            
+            <!-- Header -->
+            <div class="absolute top-0 w-full h-[88px] bg-white z-40 flex items-end pb-3 px-4 shadow-sm">
+                <div class="flex items-center justify-between w-full">
+                    <i class="fa-solid fa-angle-left text-xl p-2 cursor-pointer" onclick="navTo('page-2')"></i>
+                    <h2 class="text-lg font-bold">个人设置</h2>
+                    <div class="w-8"></div>
+                </div>
+            </div>
+
+            <div class="page-content pt-[100px] px-4">
+                
+                <div class="flex flex-col items-center mb-8 pt-4">
+                    <div class="relative">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-20 h-20 rounded-full bg-white border-4 border-white shadow-md">
+                        <div class="absolute bottom-0 right-0 w-6 h-6 bg-theme-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs cursor-pointer">
+                            <i class="fa-solid fa-pen"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                    <div class="p-4 border-b border-gray-50">
+                        <label class="block text-xs text-gray-500 mb-1">当前昵称</label>
+                        <div class="flex items-center justify-between">
+                            <input type="text" value="麻辣小王子" class="text-lg font-bold text-gray-800 focus:outline-none w-full">
+                            <i class="fa-solid fa-pencil text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition">
+                        <span class="text-sm text-gray-700">偏好设置</span>
+                        <i class="fa-solid fa-angle-right text-gray-400"></i>
+                    </div>
+                    <div class="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition border-t border-gray-50">
+                        <span class="text-sm text-gray-700">关于应用</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400">v1.0.0</span>
+                            <i class="fa-solid fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="navTo('page-1')" class="w-full py-3.5 bg-white text-red-500 rounded-xl font-bold text-sm border border-red-100 shadow-sm tap-effect">
+                    清除本地信息并退出
+                </button>
+                <p class="text-xs text-gray-400 text-center mt-3">清除后下次进入需重新设置昵称</p>
+
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+
+    </div>
+
+    <!-- 交互脚本 -->
+    <script>
+        // 平滑滚动定位到指定页面
+        function navTo(pageId) {
+            const el = document.getElementById(pageId);
+            if(el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                // 关闭可能打开的FAB菜单
+                const menu = document.getElementById('fabMenu');
+                if(menu && menu.classList.contains('open')) {
+                    toggleFab();
+                }
+            }
+        }
+
+        // 首页悬浮按钮菜单切换
+        let fabOpen = false;
+        function toggleFab() {
+            const menu = document.getElementById('fabMenu');
+            const icon = document.getElementById('fabIcon');
+            const btn = document.getElementById('fabBtn');
+            
+            fabOpen = !fabOpen;
+            if(fabOpen) {
+                menu.classList.add('open');
+                icon.classList.remove('fa-plus');
+                icon.classList.add('fa-xmark');
+                icon.style.transform = 'rotate(90deg)';
+                btn.classList.add('shadow-[0_8px_25px_rgba(239,68,68,0.6)]');
+            } else {
+                menu.classList.remove('open');
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-plus');
+                icon.style.transform = 'rotate(0deg)';
+                btn.classList.remove('shadow-[0_8px_25px_rgba(239,68,68,0.6)]');
+            }
+        }
+
+        // 简单的转盘动画模拟
+        function spinIt() {
+            const wheel = document.getElementById('spinWheel');
+            const currentRotation = getComputedStyle(wheel).transform;
+            // 随机旋转 3到5 圈 (1080 - 1800 度) + 随机角度
+            const randomDegree = Math.floor(Math.random() * 360) + 1080; 
+            wheel.style.transition = 'transform 3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            wheel.style.transform = `rotate(${randomDegree}deg)`;
+            
+            // 3秒后重置 transition 以便下次继续转
+            setTimeout(() => {
+                wheel.style.transition = 'none';
+                wheel.style.transform = `rotate(${randomDegree % 360}deg)`;
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

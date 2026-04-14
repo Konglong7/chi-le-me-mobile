@@ -114,3 +114,36 @@ textarea {
 .animate-soft-pop {
   animation: soft-pop 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+
+.wheel-surface {
+  overflow: hidden;
+}
+
+.wheel-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.wheel-label__body {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform-origin: left center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
+  color: #fff5dc;
+  text-shadow: 0 2px 5px rgba(15, 23, 42, 0.8);
+}
+
+.wheel-label__line {
+  display: block;
+}

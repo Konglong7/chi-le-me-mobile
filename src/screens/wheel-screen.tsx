@@ -3,7 +3,7 @@ import { FaFileImport, FaPlus, FaXmark } from 'react-icons/fa6';
 import { useAppStore } from '../app/store';
 import { AppShell, BottomNav, ScreenScroller } from '../components/layout';
 import { playWheelSpinSound } from '../lib/audio';
-import { buildWheelGradient, getWinningWheelIndex } from '../lib/wheel';
+import { buildWheelGradient, buildWheelLabelLayout, getWinningWheelIndex } from '../lib/wheel';
 import { wheelPresets } from '../lib/wheel-presets';
 export function WheelScreen() {
   const { state, actions } = useAppStore();
@@ -16,13 +16,15 @@ export function WheelScreen() {
   const hasOptions = state.wheelOptions.length > 0;
   const segments = useMemo(() => {
     const options = hasOptions ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
-    const slice = 360 / options.length;
 
     return options.map((option, index) => ({
       ...option,
-      rotation: index * slice,
-      textRotation: index * slice + slice / 2,
-      slice,
+      ...buildWheelLabelLayout({
+        name: option.name,
+        index,
+        optionCount: options.length,
+        wheelDiameter: 300,
+      }),
     }));
   }, [hasOptions, state.wheelOptions]);
 
@@ -107,7 +109,7 @@ export function WheelScreen() {
 
           <div className="relative mb-8 h-[300px] w-[300px]">
             <div
-              className="relative h-full w-full rounded-full border-4 border-white shadow-[0_10px_25px_rgba(239,68,68,0.3)]"
+              className="wheel-surface relative h-full w-full rounded-full border-4 border-white shadow-[0_10px_25px_rgba(239,68,68,0.3)]"
               style={{
                 background: wheelGradient,
                 transform: `rotate(${animatedRotation}deg)`,
@@ -117,14 +119,27 @@ export function WheelScreen() {
               {segments.map((segment) => (
                 <div
                   key={segment.id}
-                  className="absolute left-1/2 top-1/2 origin-center"
+                  data-testid="wheel-label"
+                  className="wheel-label"
                   style={{
-                    transform: `rotate(${segment.textRotation}deg) translateY(-114px) rotate(${-segment.textRotation}deg)`,
+                    transform: `translate(-50%, -50%) rotate(${segment.centerAngle}deg)`,
                   }}
                 >
-                  <span className="block max-w-[74px] text-center text-[11px] font-bold leading-4 text-white drop-shadow-[0_2px_4px_rgba(15,23,42,0.75)]">
-                    {segment.name}
-                  </span>
+                  <div
+                    className="wheel-label__body"
+                    style={{
+                      transform: `translateY(-50%) translateX(${segment.radialOffset}px) rotate(${segment.textAngle}deg)`,
+                      width: `${segment.width}px`,
+                      fontSize: `${segment.fontSize}px`,
+                      lineHeight: segment.lineHeight,
+                    }}
+                  >
+                    {segment.lines.map((line, lineIndex) => (
+                      <span key={`${segment.id}-${lineIndex}`} className="wheel-label__line">
+                        {line}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
               <div className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-white font-black text-theme-500 shadow-[0_12px_28px_rgba(239,68,68,0.35)]">
@@ -172,7 +187,10 @@ export function WheelScreen() {
                   key={label}
                   type="button"
                   aria-label={`快捷导入 ${label}`}
-                  onClick={() => actions.addWheelOptions(foods)}
+                  onClick={() => {
+                    actions.clearWheelOptions();
+                    actions.addWheelOptions(foods);
+                  }}
                   className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-100"
                 >
                   {label}

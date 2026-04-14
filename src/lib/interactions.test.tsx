@@ -129,4 +129,15 @@ describe('core product interactions', () => {
     expect(audioContext.createOscillator).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
+
+  it('renders tangent wheel labels for the imported wheel options', async () => {
+    const user = await enterApp();
+
+    await user.click(screen.getByRole('button', { name: '转盘' }));
+    await user.click(screen.getByRole('button', { name: '快捷导入 减肥套餐' }));
+
+    expect(screen.getAllByTestId('wheel-label')).toHaveLength(5);
+    expect(screen.getByText('鸡胸肉沙拉')).toBeInTheDocument();
+    expect(screen.getByText('玉米紫薯杯')).toBeInTheDocument();
+  });
 });

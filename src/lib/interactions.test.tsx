@@ -52,6 +52,19 @@ describe('core product interactions', () => {
     expect(screen.queryByText('人数上限')).not.toBeInTheDocument();
   });
 
+  it('requires a proposal title before enabling publish', async () => {
+    const user = await enterApp();
+
+    await user.click(screen.getByRole('button', { name: '发起提案' }));
+
+    const publishButton = screen.getByRole('button', { name: '请输入提案标题' });
+    expect(publishButton).toBeDisabled();
+
+    await user.type(screen.getByPlaceholderText('例如：今晚去吃什么？'), '今晚吃烤鱼');
+
+    expect(screen.getByRole('button', { name: '发布提案' })).toBeEnabled();
+  });
+
   it('supports voting, joining, and chatting inside proposal detail', async () => {
     const user = await enterApp();
 
@@ -101,6 +114,20 @@ describe('core product interactions', () => {
     const history = screen.getByRole('main');
     expect(within(history).getByText('深夜炸鸡套餐')).toBeInTheDocument();
     expect(within(history).getByText('深夜党福音，趁热吃很顶。')).toBeInTheDocument();
+  });
+
+  it('requires a food name before enabling share publish', async () => {
+    const user = await enterApp();
+
+    await user.click(screen.getByRole('button', { name: '打开快捷菜单' }));
+    await user.click(screen.getByRole('button', { name: '分享美食' }));
+
+    const publishButton = screen.getByRole('button', { name: '填写美食名称' });
+    expect(publishButton).toBeDisabled();
+
+    await user.type(screen.getByPlaceholderText('美食名称（必填，如：原味冰拿铁）'), '冰豆浆');
+
+    expect(screen.getByRole('button', { name: '发布分享' })).toBeEnabled();
   });
 
   it('supports wheel quick presets and plays sound when spinning', async () => {

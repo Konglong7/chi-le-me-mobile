@@ -15,6 +15,7 @@ export function CreateProposalScreen() {
   const [voteEnabled, setVoteEnabled] = useState(true);
   const [joinEnabled, setJoinEnabled] = useState(true);
   const [voteOptions, setVoteOptions] = useState(['沙县小吃', '隆江猪脚饭']);
+  const canPublish = title.trim().length > 0;
 
   const addVoteOption = () => setVoteOptions((current) => [...current, '']);
   const removeVoteOption = (index: number) =>
@@ -199,6 +200,7 @@ export function CreateProposalScreen() {
       <div className="absolute bottom-[84px] left-0 z-50 w-full border-t border-slate-100 bg-white p-4">
         <PrimaryButton
           type="button"
+          disabled={!canPublish}
           onClick={() =>
             actions.createProposal({
               title,
@@ -211,9 +213,9 @@ export function CreateProposalScreen() {
               voteOptions,
             })
           }
-          className="w-full py-3.5 text-lg"
+          className="w-full py-3.5 text-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
         >
-          发布提案
+          {canPublish ? '发布提案' : '请输入提案标题'}
         </PrimaryButton>
       </div>
 

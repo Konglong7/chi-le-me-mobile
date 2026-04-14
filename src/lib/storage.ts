@@ -17,10 +17,9 @@ export function loadPersistedState(): PersistedState {
 
     return {
       currentUser: parsed.currentUser ?? seed.currentUser,
-      proposals: Array.isArray(parsed.proposals) && parsed.proposals.length > 0 ? parsed.proposals : seed.proposals,
-      shares: Array.isArray(parsed.shares) && parsed.shares.length > 0 ? parsed.shares : seed.shares,
-      wheelOptions:
-        Array.isArray(parsed.wheelOptions) && parsed.wheelOptions.length > 0 ? parsed.wheelOptions : seed.wheelOptions,
+      proposals: Array.isArray(parsed.proposals) ? parsed.proposals : seed.proposals,
+      shares: Array.isArray(parsed.shares) ? parsed.shares : seed.shares,
+      wheelOptions: Array.isArray(parsed.wheelOptions) ? parsed.wheelOptions : seed.wheelOptions,
       sessionToken: parsed.sessionToken ?? null,
       deviceId: parsed.deviceId ?? null,
     };

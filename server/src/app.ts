@@ -26,6 +26,7 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
   });
 
   const authHeaderSchema = z.string().startsWith('Bearer ');
+  const requiredTrimmedString = z.string().trim().min(1);
 
   async function authenticate(request: { headers: Record<string, string | string[] | undefined> }) {
     const authorization = request.headers.authorization;
@@ -98,8 +99,8 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
 
   app.post('/api/sessions/identify', async (request, reply) => {
     const bodySchema = z.object({
-      deviceId: z.string().min(1),
-      nickname: z.string().min(1),
+      deviceId: requiredTrimmedString,
+      nickname: requiredTrimmedString,
     });
     const parsed = bodySchema.safeParse(request.body);
 
@@ -130,14 +131,14 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
   app.post('/api/proposals', async (request, reply) => {
     const token = await authenticate(request);
     const bodySchema = z.object({
-      title: z.string().min(1),
+      title: requiredTrimmedString,
       proposalType: z.enum(['到店', '外卖', '随机征集']),
-      targetName: z.string().default(''),
-      eventLabel: z.string().default(''),
+      targetName: z.string().trim().default(''),
+      eventLabel: z.string().trim().default(''),
       maxPeople: z.number().int().min(2).max(20),
       voteEnabled: z.boolean().default(true),
       joinEnabled: z.boolean().default(true),
-      voteOptions: z.array(z.string()),
+      voteOptions: z.array(z.string().trim()),
     });
 
     if (!token) {
@@ -243,7 +244,7 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
   app.post('/api/proposals/:proposalId/messages', async (request, reply) => {
     const token = await authenticate(request);
     const paramsSchema = z.object({ proposalId: z.string().min(1) });
-    const bodySchema = z.object({ content: z.string().min(1) });
+    const bodySchema = z.object({ content: requiredTrimmedString });
 
     if (!token) {
       return reply.code(401).send({ message: 'Unauthorized' });
@@ -270,12 +271,12 @@ export async function buildApp({ useMemoryDb = false, repository }: { useMemoryD
   app.post('/api/shares', async (request, reply) => {
     const token = await authenticate(request);
     const bodySchema = z.object({
-      foodName: z.string().min(1),
-      shopName: z.string().default(''),
-      price: z.string().default(''),
-      address: z.string().default(''),
+      foodName: requiredTrimmedString,
+      shopName: z.string().trim().default(''),
+      price: z.string().trim().default(''),
+      address: z.string().trim().default(''),
       rating: z.number().int().min(1).max(5),
-      comment: z.string().default(''),
+      comment: z.string().trim().default(''),
     });
 
     if (!token) {

@@ -70,4 +70,76 @@ describe('proposal routes', () => {
     expect(detail.statusCode).toBe(200);
     expect(detail.json().voteOptions).toHaveLength(2);
   });
+
+  it('keeps proposal status in group mode when voting is disabled', async () => {
+    const app = await buildApp({ useMemoryDb: true });
+    (globalThis as { __app?: typeof app }).__app = app;
+
+    const identify = await app.inject({
+      method: 'POST',
+      url: '/api/sessions/identify',
+      payload: {
+        deviceId: 'device-create-status',
+        nickname: '发起人',
+      },
+    });
+
+    const token = identify.json().sessionToken as string;
+    const createProposal = await app.inject({
+      method: 'POST',
+      url: '/api/proposals',
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      payload: {
+        title: '关闭投票提案',
+        proposalType: '到店',
+        targetName: '楼下小馆',
+        eventLabel: '今天 20:00',
+        maxPeople: 4,
+        voteEnabled: false,
+        joinEnabled: true,
+        voteOptions: ['A', 'B'],
+      },
+    });
+
+    expect(createProposal.statusCode).toBe(201);
+    expect(createProposal.json().voteEnabled).toBe(false);
+    expect(createProposal.json().status).toBe('组队中');
+  });
+
+  it('rejects whitespace-only proposal titles', async () => {
+    const app = await buildApp({ useMemoryDb: true });
+    (globalThis as { __app?: typeof app }).__app = app;
+
+    const identify = await app.inject({
+      method: 'POST',
+      url: '/api/sessions/identify',
+      payload: {
+        deviceId: 'device-create-invalid',
+        nickname: '发起人',
+      },
+    });
+
+    const token = identify.json().sessionToken as string;
+    const createProposal = await app.inject({
+      method: 'POST',
+      url: '/api/proposals',
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      payload: {
+        title: '   ',
+        proposalType: '到店',
+        targetName: '宿舍楼下烧烤摊',
+        eventLabel: '今天 20:00',
+        maxPeople: 4,
+        voteEnabled: true,
+        joinEnabled: true,
+        voteOptions: ['楼下烧烤', '街口炒饭'],
+      },
+    });
+
+    expect(createProposal.statusCode).toBe(400);
+  });
 });

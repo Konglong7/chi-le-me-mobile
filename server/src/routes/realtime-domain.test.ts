@@ -103,4 +103,42 @@ describe('proposal domain routes', () => {
     expect(history.statusCode).toBe(200);
     expect(history.json().shares[0].foodName).toBe('深夜炸鸡套餐');
   });
+
+  it('rejects whitespace-only messages and share names', async () => {
+    const app = await buildApp({ useMemoryDb: true });
+    (globalThis as { __app?: typeof app }).__app = app;
+
+    const token = await identify(app, 'domain-device-invalid', '麻辣小王子');
+    const bootstrap = await app.inject({
+      method: 'GET',
+      url: '/api/bootstrap',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const proposalId = bootstrap.json().proposals[0].id as string;
+
+    const message = await app.inject({
+      method: 'POST',
+      url: `/api/proposals/${proposalId}/messages`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { content: '   ' },
+    });
+
+    expect(message.statusCode).toBe(400);
+
+    const share = await app.inject({
+      method: 'POST',
+      url: '/api/shares',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        foodName: '   ',
+        shopName: '楼下炸鸡',
+        price: '28',
+        address: '宿舍楼下',
+        rating: 5,
+        comment: '深夜党福音，趁热吃很顶。',
+      },
+    });
+
+    expect(share.statusCode).toBe(400);
+  });
 });

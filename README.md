@@ -73,12 +73,38 @@ $env:RUN_PG_INTEGRATION='1'
 npm run test:run -- server/src/postgres-repository.test.ts
 ```
 
-## Android
+## Android 课设演示
 
-```bash
-npm run build
-npx cap sync android
+先在项目根目录准备后端环境：
+
+```powershell
+Copy-Item .env.example .env -Force
+npm run server:dev
+```
+
+在另一个终端构建并同步 Android 资源：
+
+```powershell
+$env:VITE_API_BASE_URL='http://10.0.2.2:8787'
+npm run cap:sync
 npx cap open android
 ```
 
-Android Studio 打开后可直接运行 `android/` 工程。
+Android Studio 打开 `android/` 工程后，直接运行默认模拟器即可。
+官方模拟器会通过 `http://10.0.2.2:8787` 访问本机后端。
+
+如果使用雷电模拟器，且 `10.0.2.2` 无法访问本机后端，先查询当前电脑局域网 IP：
+
+```powershell
+Get-NetIPAddress -AddressFamily IPv4 | Select-Object IPAddress
+```
+
+然后改用局域网地址重新构建 Android 资源：
+
+```powershell
+$env:VITE_API_BASE_URL='http://192.168.1.23:8787'
+npm run cap:sync
+npx cap open android
+```
+
+如果 App 能进入昵称页，并在提交昵称后正常进入首页，说明 Android Studio 本地联调已经打通。

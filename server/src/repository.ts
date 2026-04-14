@@ -59,6 +59,61 @@ function deriveStatus(proposal: Proposal): Proposal['status'] {
   return '组队中';
 }
 
+function renameUserReferences(
+  proposals: Proposal[],
+  shares: SharePost[],
+  previousNickname: string,
+  nextNickname: string,
+  nextAvatarSeed: string,
+) {
+  const nextProposals = proposals.map((proposal) => {
+    const creatorRenamed = proposal.creatorNickname === previousNickname;
+
+    return {
+      ...proposal,
+      creatorNickname: creatorRenamed ? nextNickname : proposal.creatorNickname,
+      creatorAvatarSeed: creatorRenamed ? nextAvatarSeed : proposal.creatorAvatarSeed,
+      voteOptions: proposal.voteOptions.map((option) => ({
+        ...option,
+        voterNicknames: option.voterNicknames.map((nickname) => (nickname === previousNickname ? nextNickname : nickname)),
+      })),
+      teamMembers: proposal.teamMembers.map((member) =>
+        member.nickname === previousNickname
+          ? {
+              ...member,
+              nickname: nextNickname,
+              avatarSeed: nextAvatarSeed,
+            }
+          : member,
+      ),
+      chatMessages: proposal.chatMessages.map((message) =>
+        message.nickname === previousNickname
+          ? {
+              ...message,
+              nickname: nextNickname,
+              avatarSeed: nextAvatarSeed,
+            }
+          : message,
+      ),
+    };
+  });
+
+  const nextShares = shares.map((share) =>
+    share.sharedBy === previousNickname
+      ? {
+          ...share,
+          sharedBy: nextNickname,
+          sharedAvatarSeed: nextAvatarSeed,
+        }
+      : share,
+  );
+
+  return {
+    proposals: nextProposals,
+    shares: nextShares,
+  };
+}
+
 export function createMemoryRepository(): AppRepository {
   const seed = createSeedState();
   const usersByDevice = new Map<string, StoredUser>();
@@ -91,8 +146,15 @@ export function createMemoryRepository(): AppRepository {
         };
         usersByDevice.set(deviceId, user);
       } else {
+        const previousNickname = user.nickname;
         user.nickname = cleanNickname;
         user.avatarSeed = createAvatarSeed(cleanNickname);
+
+        if (previousNickname !== cleanNickname) {
+          const renamedState = renameUserReferences(proposals, shares, previousNickname, cleanNickname, user.avatarSeed);
+          proposals = renamedState.proposals;
+          shares = renamedState.shares;
+        }
       }
 
       const sessionToken = randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', '');
@@ -149,7 +211,7 @@ export function createMemoryRepository(): AppRepository {
         creatorAvatarSeed: user.avatarSeed,
         createdLabel: '刚刚',
         proposalType: payload.proposalType,
-        status: payload.voteOptions.filter((item) => item.trim()).length > 1 ? '投票中' : '组队中',
+        status: payload.voteEnabled && payload.voteOptions.filter((item) => item.trim()).length > 1 ? '投票中' : '组队中',
         eventLabel: payload.eventLabel.trim() || '今天 18:30',
         expectedPeopleLabel: `预计${payload.maxPeople}人`,
         targetName: payload.targetName.trim(),

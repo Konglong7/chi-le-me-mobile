@@ -11,26 +11,53 @@ import { WheelScreen } from '../screens/wheel-screen';
 function AppContent() {
   const { state } = useAppStore();
 
+  let screen = <WelcomeScreen />;
+
   switch (state.currentPage) {
     case 'welcome':
-      return <WelcomeScreen />;
+      screen = <WelcomeScreen />;
+      break;
     case 'home':
-      return <HomeScreen />;
+      screen = <HomeScreen />;
+      break;
     case 'create':
-      return <CreateProposalScreen />;
+      screen = <CreateProposalScreen />;
+      break;
     case 'proposal':
-      return <ProposalDetailScreen />;
+      screen = <ProposalDetailScreen />;
+      break;
     case 'wheel':
-      return <WheelScreen />;
+      screen = <WheelScreen />;
+      break;
     case 'share':
-      return <ShareScreen />;
+      screen = <ShareScreen />;
+      break;
     case 'history':
-      return <HistoryScreen />;
+      screen = <HistoryScreen />;
+      break;
     case 'settings':
-      return <SettingsScreen />;
+      screen = <SettingsScreen />;
+      break;
     default:
-      return <WelcomeScreen />;
+      screen = <WelcomeScreen />;
+      break;
   }
+
+  return (
+    <>
+      {screen}
+      {state.transientError ? (
+        <div className="pointer-events-none fixed left-1/2 top-4 z-[120] w-[calc(100%-2rem)] max-w-[398px] -translate-x-1/2">
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-red-50/95 px-4 py-3 text-sm font-medium text-red-700 shadow-lg backdrop-blur"
+          >
+            {state.transientError}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 export function App() {

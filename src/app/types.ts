@@ -95,6 +95,7 @@ export interface AppStoreState extends PersistedState {
   historyFilter: HistoryFilter;
   wheelResult: string | null;
   wheelRotation: number;
+  transientError: string | null;
 }
 
 export interface CreateProposalInput {

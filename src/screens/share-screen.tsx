@@ -11,6 +11,7 @@ export function ShareScreen() {
   const [address, setAddress] = useState('');
   const [rating, setRating] = useState(4);
   const [comment, setComment] = useState('');
+  const canPublish = foodName.trim().length > 0;
 
   return (
     <AppShell>
@@ -22,6 +23,7 @@ export function ShareScreen() {
           <h2 className="text-lg font-bold">分享我吃过的</h2>
           <button
             type="button"
+            disabled={!canPublish}
             onClick={() =>
               actions.addShare({
                 foodName,
@@ -32,9 +34,9 @@ export function ShareScreen() {
                 comment,
               })
             }
-            className="rounded-full bg-theme-50 px-3 py-1 text-sm font-bold text-theme-500"
+            className="rounded-full bg-theme-50 px-3 py-1 text-sm font-bold text-theme-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
           >
-            发布分享
+            {canPublish ? '发布分享' : '填写美食名称'}
           </button>
         </div>
       </div>

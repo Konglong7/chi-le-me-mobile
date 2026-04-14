@@ -73,4 +73,20 @@ describe('session and bootstrap routes', () => {
     expect(identifyAgain.statusCode).toBe(200);
     expect(identifyAgain.json().currentUser.nickname).toBe('新昵称');
   });
+
+  it('rejects whitespace-only nicknames', async () => {
+    const app = await buildApp({ useMemoryDb: true });
+    (globalThis as { __app?: typeof app }).__app = app;
+
+    const identify = await app.inject({
+      method: 'POST',
+      url: '/api/sessions/identify',
+      payload: {
+        deviceId: 'device-space',
+        nickname: '   ',
+      },
+    });
+
+    expect(identify.statusCode).toBe(400);
+  });
 });

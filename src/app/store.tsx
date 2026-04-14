@@ -49,6 +49,8 @@ type Action =
   | { type: 'clearWheelOptions' }
   | { type: 'importWheelOptions' }
   | { type: 'spinWheel' }
+  | { type: 'showTransientError'; message: string }
+  | { type: 'clearTransientError' }
   | { type: 'hydrateRemote'; payload: PersistedState }
   | {
       type: 'upsertProposal';
@@ -71,7 +73,7 @@ interface AppStoreValue {
     createProposal: (payload: CreateProposalInput) => void;
     submitVote: (proposalId: string, optionId: string) => void;
     toggleJoin: (proposalId: string) => void;
-    sendMessage: (proposalId: string, content: string) => void;
+    sendMessage: (proposalId: string, content: string) => Promise<boolean>;
     addShare: (payload: CreateShareInput) => void;
     setHistoryFilter: (filter: HistoryFilter) => void;
     addWheelOption: (name: string) => void;
@@ -97,6 +99,7 @@ function createInitialState(): AppStoreState {
     historyFilter: 'all',
     wheelResult: null,
     wheelRotation: 45,
+    transientError: null,
   };
 }
 
@@ -153,6 +156,18 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
         currentPage: 'proposal',
         activeProposalId: action.proposalId,
         fabOpen: false,
+      };
+
+    case 'showTransientError':
+      return {
+        ...state,
+        transientError: action.message,
+      };
+
+    case 'clearTransientError':
+      return {
+        ...state,
+        transientError: null,
       };
 
     case 'enter': {
@@ -490,6 +505,7 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
         currentPage: 'welcome',
         fabOpen: false,
         activeProposalId: state.proposals[0]?.id ?? null,
+        transientError: null,
       };
 
     default:
@@ -503,9 +519,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const didBootstrapRemote = useRef(false);
   const realtimeRef = useRef<RealtimeConnection | null>(null);
 
+  function keepRemoteTruth<T>(operation: Promise<T>, onSuccess: (value: T) => void, failureMessage: string) {
+    return operation
+      .then((value) => {
+        dispatch({ type: 'clearTransientError' });
+        onSuccess(value);
+        return true;
+      })
+      .catch(() => {
+        dispatch({ type: 'showTransientError', message: failureMessage });
+        return false;
+      });
+  }
+
   useEffect(() => {
     savePersistedState(persistableState(state));
   }, [state.currentUser, state.proposals, state.shares, state.wheelOptions, state.sessionToken, state.deviceId]);
+
+  useEffect(() => {
+    if (!state.transientError) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dispatch({ type: 'clearTransientError' });
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [state.transientError]);
 
   useEffect(() => {
     if (!remoteEnabled || !state.sessionToken || didBootstrapRemote.current) {
@@ -655,18 +698,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
               return;
             }
 
-            void createProposalRemote(state.sessionToken, payload)
-              .then((proposal) => {
+            void keepRemoteTruth(
+              createProposalRemote(state.sessionToken, payload),
+              (proposal) => {
                 dispatch({
                   type: 'upsertProposal',
                   proposal,
                   currentPage: 'home',
                   activeProposalId: proposal.id,
                 });
-              })
-              .catch(() => {
-                dispatch({ type: 'createProposal', payload });
-              });
+              },
+              '提案发布失败，请稍后重试',
+            );
           },
           submitVote: (proposalId, optionId) => {
             if (!remoteEnabled || !state.sessionToken) {
@@ -674,16 +717,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
               return;
             }
 
-            void submitVoteRemote(state.sessionToken, proposalId, optionId)
-              .then((proposal) => {
+            void keepRemoteTruth(
+              submitVoteRemote(state.sessionToken, proposalId, optionId),
+              (proposal) => {
                 dispatch({
                   type: 'upsertProposal',
                   proposal,
                 });
-              })
-              .catch(() => {
-                dispatch({ type: 'submitVote', proposalId, optionId });
-              });
+              },
+              '投票提交失败，请稍后重试',
+            );
           },
           toggleJoin: (proposalId) => {
             if (!remoteEnabled || !state.sessionToken) {
@@ -691,33 +734,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
               return;
             }
 
-            void toggleParticipationRemote(state.sessionToken, proposalId)
-              .then((proposal) => {
+            void keepRemoteTruth(
+              toggleParticipationRemote(state.sessionToken, proposalId),
+              (proposal) => {
                 dispatch({
                   type: 'upsertProposal',
                   proposal,
                 });
-              })
-              .catch(() => {
-                dispatch({ type: 'toggleJoin', proposalId });
-              });
+              },
+              '组队状态更新失败，请稍后重试',
+            );
           },
           sendMessage: (proposalId, content) => {
             if (!remoteEnabled || !state.sessionToken) {
               dispatch({ type: 'sendMessage', proposalId, content });
-              return;
+              return Promise.resolve(true);
             }
 
-            void sendMessageRemote(state.sessionToken, proposalId, content)
-              .then((proposal) => {
+            return keepRemoteTruth(
+              sendMessageRemote(state.sessionToken, proposalId, content),
+              (proposal) => {
                 dispatch({
                   type: 'upsertProposal',
                   proposal,
                 });
-              })
-              .catch(() => {
-                dispatch({ type: 'sendMessage', proposalId, content });
-              });
+              },
+              '消息发送失败，请稍后重试',
+            );
           },
           addShare: (payload) => {
             if (!remoteEnabled || !state.sessionToken) {
@@ -725,16 +768,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
               return;
             }
 
-            void createShareRemote(state.sessionToken, payload)
-              .then((share) => {
+            void keepRemoteTruth(
+              createShareRemote(state.sessionToken, payload),
+              (share) => {
                 dispatch({
                   type: 'prependShare',
                   share,
                 });
-              })
-              .catch(() => {
-                dispatch({ type: 'addShare', payload });
-              });
+              },
+              '分享发布失败，请稍后重试',
+            );
           },
           setHistoryFilter: (filter) => dispatch({ type: 'setHistoryFilter', filter }),
           addWheelOption: (name) => dispatch({ type: 'addWheelOption', name }),

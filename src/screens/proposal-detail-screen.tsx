@@ -14,6 +14,7 @@ export function ProposalDetailScreen() {
   const [message, setMessage] = useState('');
   const joined = proposal.teamMembers.some((member) => member.nickname === currentNickname);
   const isCreator = proposal.creatorNickname === currentNickname;
+  const canSendMessage = message.trim().length > 0;
 
   const shareProposal = async () => {
     const text = `${proposal.title} - ${proposal.eventLabel ?? '一起干饭'}`;
@@ -193,11 +194,15 @@ export function ProposalDetailScreen() {
         <button
           type="button"
           aria-label="发送消息"
-          onClick={() => {
-            actions.sendMessage(proposal.id, message);
-            setMessage('');
+          disabled={!canSendMessage}
+          onClick={async () => {
+            const sent = await actions.sendMessage(proposal.id, message);
+
+            if (sent) {
+              setMessage('');
+            }
           }}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-theme-500 text-white shadow-md"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-theme-500 text-white shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
         >
           <FaPaperPlane className="text-sm" />
         </button>

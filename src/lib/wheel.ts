@@ -7,6 +7,43 @@ function normalizeDegrees(value: number) {
   return normalized < 0 ? normalized + FULL_TURN : normalized;
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export interface WheelLabelLayout {
+  centerAngle: number;
+  textAngle: number;
+  radialOffset: number;
+  width: number;
+  fontSize: number;
+  lineHeight: number;
+  lines: string[];
+}
+
+export function splitWheelLabel(name: string) {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return [''];
+  }
+
+  const charCount = trimmed.length;
+  const isAscii = /^[\u0000-\u007f]+$/.test(trimmed);
+
+  if (isAscii || charCount <= 4) {
+    return [trimmed];
+  }
+
+  if (charCount <= 6) {
+    const firstLine = trimmed.slice(0, 3).trim();
+    const secondLine = trimmed.slice(3).trim();
+    return secondLine ? [firstLine, secondLine] : [firstLine];
+  }
+
+  const splitIndex = Math.ceil(charCount / 2);
+  return [trimmed.slice(0, splitIndex), trimmed.slice(splitIndex)];
+}
+
 export function calculateTargetWheelRotation({
   currentRotation,
   optionCount,
@@ -53,4 +90,35 @@ export function buildWheelGradient(optionCount: number) {
   });
 
   return `conic-gradient(${stops.join(', ')})`;
+}
+
+export function buildWheelLabelLayout({
+  name,
+  index,
+  optionCount,
+  wheelDiameter = 300,
+}: {
+  name: string;
+  index: number;
+  optionCount: number;
+  wheelDiameter?: number;
+}): WheelLabelLayout {
+  const safeOptionCount = Math.max(1, optionCount);
+  const slice = FULL_TURN / safeOptionCount;
+  const centerAngle = index * slice + slice / 2;
+  const radius = wheelDiameter / 2;
+  const normalizedCount = clamp(safeOptionCount, 3, 12);
+  const radialRatio = clamp(0.61 - (normalizedCount - 3) * 0.01, 0.55, 0.61);
+  const widthRatio = clamp(0.24 - (normalizedCount - 3) * 0.004, 0.20, 0.24);
+  const lines = splitWheelLabel(name);
+
+  return {
+    centerAngle,
+    textAngle: 90,
+    radialOffset: radius * radialRatio,
+    width: wheelDiameter * widthRatio,
+    fontSize: lines.length > 1 ? 12 : 13,
+    lineHeight: lines.length > 1 ? 1.1 : 1.2,
+    lines,
+  };
 }

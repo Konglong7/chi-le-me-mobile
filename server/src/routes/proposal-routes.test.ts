@@ -37,6 +37,8 @@ describe('proposal routes', () => {
         targetName: '宿舍楼下烧烤摊',
         eventLabel: '今天 20:00',
         maxPeople: 4,
+        voteEnabled: true,
+        joinEnabled: true,
         voteOptions: ['楼下烧烤', '街口炒饭'],
       },
     });

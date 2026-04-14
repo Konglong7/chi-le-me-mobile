@@ -81,6 +81,8 @@ describe('socket realtime', () => {
         targetName: '新店',
         eventLabel: '今天 18:30',
         maxPeople: 4,
+        voteEnabled: true,
+        joinEnabled: true,
         voteOptions: ['新店', '旧店'],
       },
     });

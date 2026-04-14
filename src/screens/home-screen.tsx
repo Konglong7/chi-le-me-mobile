@@ -93,9 +93,10 @@ export function HomeScreen() {
                         <button
                           type="button"
                           onClick={() => actions.toggleJoin(proposal.id)}
-                          className="rounded-full bg-slate-100 px-4 py-1.5 text-sm font-bold text-slate-800"
+                          disabled={proposal.creatorNickname === state.currentUser?.nickname}
+                          className="rounded-full bg-slate-100 px-4 py-1.5 text-sm font-bold text-slate-800 disabled:cursor-not-allowed disabled:text-slate-400"
                         >
-                          我要去
+                          {proposal.creatorNickname === state.currentUser?.nickname ? '发起人' : '我要去'}
                         </button>
                       ) : null}
                       <button

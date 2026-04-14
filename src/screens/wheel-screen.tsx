@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaFileImport, FaPlus, FaXmark } from 'react-icons/fa6';
 import { useAppStore } from '../app/store';
 import { AppShell, BottomNav, ScreenScroller } from '../components/layout';
 import { playWheelSpinSound } from '../lib/audio';
 import { wheelPresets } from '../lib/wheel-presets';
-
 export function WheelScreen() {
   const { state, actions } = useAppStore();
   const [customImport, setCustomImport] = useState('');
+  const [liveResult, setLiveResult] = useState(state.wheelResult);
+  const latestResultRef = useRef(state.wheelResult);
   const segments = useMemo(() => {
     const options = state.wheelOptions.length > 0 ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
     const slice = 360 / options.length;
@@ -19,6 +20,11 @@ export function WheelScreen() {
       slice,
     }));
   }, [state.wheelOptions]);
+
+  useEffect(() => {
+    latestResultRef.current = state.wheelResult;
+    setLiveResult(state.wheelResult);
+  }, [state.wheelResult]);
 
   const importCustomOptions = () => {
     const names = customImport
@@ -55,10 +61,10 @@ export function WheelScreen() {
                   key={segment.id}
                   className="absolute left-1/2 top-1/2 origin-center"
                   style={{
-                    transform: `rotate(${segment.textRotation}deg) translateY(-112px) rotate(${-segment.textRotation}deg)`,
+                    transform: `rotate(${segment.textRotation}deg) translateY(-124px) rotate(${-segment.textRotation}deg)`,
                   }}
                 >
-                  <span className="block max-w-[82px] text-center text-[11px] font-bold leading-4 text-white drop-shadow-[0_2px_4px_rgba(15,23,42,0.75)]">
+                  <span className="block max-w-[66px] text-center text-[10px] font-bold leading-3.5 text-white drop-shadow-[0_2px_4px_rgba(15,23,42,0.75)]">
                     {segment.name}
                   </span>
                 </div>
@@ -72,16 +78,25 @@ export function WheelScreen() {
               type="button"
               aria-label="开始转盘"
               onClick={() => {
+                const options = state.wheelOptions.length > 0 ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
                 playWheelSpinSound();
+                const interval = window.setInterval(() => {
+                  const random = options[Math.floor(Math.random() * options.length)];
+                  setLiveResult(random.name);
+                }, 120);
                 actions.spinWheel();
+                window.setTimeout(() => {
+                  window.clearInterval(interval);
+                  setLiveResult((current) => latestResultRef.current ?? current);
+                }, 3000);
               }}
               className="absolute left-1/2 top-1/2 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
             />
           </div>
 
-          {state.wheelResult ? (
+          {liveResult ? (
             <div className="mb-6 rounded-full border border-theme-500/30 bg-theme-500/20 px-4 py-2 text-sm font-bold text-theme-300">
-              这把吃：{state.wheelResult}
+              这把吃：{liveResult}
             </div>
           ) : null}
 
@@ -164,7 +179,7 @@ export function WheelScreen() {
         </div>
       </ScreenScroller>
 
-      <BottomNav currentPage="wheel" onNavigate={actions.navigate} dark />
+      <BottomNav currentPage="wheel" onNavigate={actions.navigate} />
     </AppShell>
   );
 }

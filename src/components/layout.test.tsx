@@ -35,4 +35,15 @@ describe('mobile shell layout', () => {
     expect(wheelButton).toHaveClass('text-theme-400');
     expect(homeButton).toHaveClass('text-slate-300/70');
   });
+
+  it('keeps light bottom navigation button sizing and spacing unchanged', () => {
+    render(<BottomNav currentPage="home" onNavigate={() => undefined} />);
+
+    const homeButton = screen.getByRole('button', { name: '首页' });
+
+    expect(homeButton).toHaveClass('min-w-[64px]');
+    expect(homeButton).toHaveClass('gap-1');
+    expect(homeButton).not.toHaveClass('font-medium');
+    expect(homeButton).not.toHaveClass('leading-none');
+  });
 });

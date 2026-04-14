@@ -62,7 +62,8 @@ export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavPr
             aria-label={item.label}
             onClick={() => onNavigate(item.page)}
             className={clsx(
-              'flex min-w-[72px] flex-col items-center gap-1.5 text-[11px] font-medium leading-none transition tap-effect',
+              'flex flex-col items-center text-[11px] transition tap-effect',
+              dark ? 'min-w-[72px] gap-1.5 font-medium leading-none' : 'min-w-[64px] gap-1',
               active ? (dark ? 'text-theme-400' : 'text-theme-500') : dark ? 'text-slate-300/70' : 'text-slate-400',
             )}
           >

@@ -17,22 +17,15 @@ export function WheelScreen() {
   const segments = useMemo(() => {
     const options = hasOptions ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
 
-    return options.map((option, index) => {
-      const layout = buildWheelLabelLayout({
+    return options.map((option, index) => ({
+      ...option,
+      ...buildWheelLabelLayout({
         name: option.name,
         index,
         optionCount: options.length,
         wheelDiameter: 300,
-      });
-      const normalizedAngle = ((layout.centerAngle % 360) + 360) % 360;
-      const isLeftSide = normalizedAngle > 90 && normalizedAngle < 270;
-
-      return {
-        ...option,
-        ...layout,
-        textAngle: isLeftSide ? (layout.textAngle + 180) % 360 : layout.textAngle,
-      };
-    });
+      }),
+    }));
   }, [hasOptions, state.wheelOptions]);
 
   const wheelGradient = useMemo(() => buildWheelGradient(segments.length), [segments.length]);
@@ -123,32 +116,38 @@ export function WheelScreen() {
               }}
             >
               <div className="absolute inset-0 rounded-full border-8 border-slate-800/50 shadow-[0_0_50px_rgba(239,68,68,0.3)]" />
-              {segments.map((segment) => (
-                <div
-                  key={segment.id}
-                  data-testid="wheel-label"
-                  className="wheel-label"
-                  style={{
-                    transform: `translate(-50%, -50%) rotate(${segment.centerAngle}deg)`,
-                  }}
-                >
+              {segments.map((segment) => {
+                const visibleAngle = ((segment.centerAngle + animatedRotation) % 360 + 360) % 360;
+                const isLeftSide = visibleAngle > 90 && visibleAngle < 270;
+                const textAngle = isLeftSide ? (segment.textAngle + 180) % 360 : segment.textAngle;
+
+                return (
                   <div
-                    className="wheel-label__body"
+                    key={segment.id}
+                    data-testid="wheel-label"
+                    className="wheel-label"
                     style={{
-                      transform: `translateY(-50%) translateX(${segment.radialOffset}px) rotate(${segment.textAngle}deg)`,
-                      width: `${segment.width}px`,
-                      fontSize: `${segment.fontSize}px`,
-                      lineHeight: segment.lineHeight,
+                      transform: `translate(-50%, -50%) rotate(${segment.centerAngle}deg)`,
                     }}
                   >
-                    {segment.lines.map((line, lineIndex) => (
-                      <span key={`${segment.id}-${lineIndex}`} className="wheel-label__line">
-                        {line}
-                      </span>
-                    ))}
+                    <div
+                      className="wheel-label__body"
+                      style={{
+                        transform: `translateY(-50%) translateX(${segment.radialOffset}px) rotate(${textAngle}deg)`,
+                        width: `${segment.width}px`,
+                        fontSize: `${segment.fontSize}px`,
+                        lineHeight: segment.lineHeight,
+                      }}
+                    >
+                      {segment.lines.map((line, lineIndex) => (
+                        <span key={`${segment.id}-${lineIndex}`} className="wheel-label__line">
+                          {line}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-white font-black text-theme-500 shadow-[0_12px_28px_rgba(239,68,68,0.35)]">
                 抽!
               </div>

@@ -144,21 +144,26 @@ describe('core product interactions', () => {
     expect(labelTexts.some((text) => text.includes('鸡胸肉沙拉'))).toBe(true);
     expect(labelTexts.some((text) => text.includes('玉米紫薯杯'))).toBe(true);
 
+    const wheelSurface = document.querySelector<HTMLElement>('.wheel-surface');
+    expect(wheelSurface).toBeTruthy();
+    const wheelRotationMatch = wheelSurface?.style.transform.match(/rotate\(([-\d.]+)deg\)/);
+    const wheelRotation = wheelRotationMatch ? Number(wheelRotationMatch[1]) : 0;
+
     const leftSideLabels = wheelLabels.filter((label) => {
-      const match = label.style.transform.match(/rotate\(([-\d.]+)deg\)/);
-      if (!match) {
+      const centerAngleMatch = label.style.transform.match(/rotate\(([-\d.]+)deg\)/);
+      if (!centerAngleMatch) {
         return false;
       }
-      const angle = Number(match[1]);
-      const normalized = ((angle % 360) + 360) % 360;
+      const visibleAngle = Number(centerAngleMatch[1]) + wheelRotation;
+      const normalized = ((visibleAngle % 360) + 360) % 360;
       return normalized > 90 && normalized < 270;
     });
 
     expect(leftSideLabels.length).toBeGreaterThan(0);
-    const hasReadableFlip = leftSideLabels.some((label) => {
+    const everyLeftLabelReadable = leftSideLabels.every((label) => {
       const body = label.querySelector<HTMLElement>('.wheel-label__body');
       return body?.style.transform.includes('rotate(270deg)') ?? false;
     });
-    expect(hasReadableFlip).toBe(true);
+    expect(everyLeftLabelReadable).toBe(true);
   });
 });

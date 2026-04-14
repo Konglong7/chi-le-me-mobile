@@ -134,10 +134,31 @@ describe('core product interactions', () => {
     const user = await enterApp();
 
     await user.click(screen.getByRole('button', { name: '转盘' }));
+    const labelsBeforeImport = screen.getAllByTestId('wheel-label');
     await user.click(screen.getByRole('button', { name: '快捷导入 减肥套餐' }));
 
-    expect(screen.getAllByTestId('wheel-label')).toHaveLength(5);
-    expect(screen.getByText('鸡胸肉沙拉')).toBeInTheDocument();
-    expect(screen.getByText('玉米紫薯杯')).toBeInTheDocument();
+    const wheelLabels = screen.getAllByTestId('wheel-label');
+    expect(wheelLabels.length).toBeGreaterThan(labelsBeforeImport.length);
+
+    const labelTexts = wheelLabels.map((node) => node.textContent ?? '');
+    expect(labelTexts.some((text) => text.includes('鸡胸肉沙拉'))).toBe(true);
+    expect(labelTexts.some((text) => text.includes('玉米紫薯杯'))).toBe(true);
+
+    const leftSideLabels = wheelLabels.filter((label) => {
+      const match = label.style.transform.match(/rotate\(([-\d.]+)deg\)/);
+      if (!match) {
+        return false;
+      }
+      const angle = Number(match[1]);
+      const normalized = ((angle % 360) + 360) % 360;
+      return normalized > 90 && normalized < 270;
+    });
+
+    expect(leftSideLabels.length).toBeGreaterThan(0);
+    const hasReadableFlip = leftSideLabels.some((label) => {
+      const body = label.querySelector<HTMLElement>('.wheel-label__body');
+      return body?.style.transform.includes('rotate(270deg)') ?? false;
+    });
+    expect(hasReadableFlip).toBe(true);
   });
 });

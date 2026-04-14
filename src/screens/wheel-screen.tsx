@@ -17,15 +17,22 @@ export function WheelScreen() {
   const segments = useMemo(() => {
     const options = hasOptions ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
 
-    return options.map((option, index) => ({
-      ...option,
-      ...buildWheelLabelLayout({
+    return options.map((option, index) => {
+      const layout = buildWheelLabelLayout({
         name: option.name,
         index,
         optionCount: options.length,
         wheelDiameter: 300,
-      }),
-    }));
+      });
+      const normalizedAngle = ((layout.centerAngle % 360) + 360) % 360;
+      const isLeftSide = normalizedAngle > 90 && normalizedAngle < 270;
+
+      return {
+        ...option,
+        ...layout,
+        textAngle: isLeftSide ? (layout.textAngle + 180) % 360 : layout.textAngle,
+      };
+    });
   }, [hasOptions, state.wheelOptions]);
 
   const wheelGradient = useMemo(() => buildWheelGradient(segments.length), [segments.length]);
@@ -187,10 +194,7 @@ export function WheelScreen() {
                   key={label}
                   type="button"
                   aria-label={`快捷导入 ${label}`}
-                  onClick={() => {
-                    actions.clearWheelOptions();
-                    actions.addWheelOptions(foods);
-                  }}
+                  onClick={() => actions.addWheelOptions(foods)}
                   className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-100"
                 >
                   {label}

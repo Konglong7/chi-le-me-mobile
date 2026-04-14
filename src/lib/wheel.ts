@@ -30,8 +30,23 @@ export function splitWheelLabel(name: string) {
   const charCount = trimmed.length;
   const isAscii = /^[\u0000-\u007f]+$/.test(trimmed);
 
-  if (isAscii || charCount <= 4) {
+  if (charCount <= 4) {
     return [trimmed];
+  }
+
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (isAscii && words.length > 1 && charCount > 6) {
+    const splitPoint = Math.ceil(words.length / 2);
+    const lines = [
+      words.slice(0, splitPoint).join(' '),
+      words.slice(splitPoint).join(' '),
+    ]
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length > 1) {
+      return lines;
+    }
   }
 
   if (charCount <= 6) {
@@ -41,7 +56,9 @@ export function splitWheelLabel(name: string) {
   }
 
   const splitIndex = Math.ceil(charCount / 2);
-  return [trimmed.slice(0, splitIndex), trimmed.slice(splitIndex)];
+  const firstLine = trimmed.slice(0, splitIndex).trim();
+  const secondLine = trimmed.slice(splitIndex).trim();
+  return secondLine ? [firstLine, secondLine] : [firstLine];
 }
 
 export function calculateTargetWheelRotation({
@@ -107,9 +124,9 @@ export function buildWheelLabelLayout({
   const slice = FULL_TURN / safeOptionCount;
   const centerAngle = index * slice + slice / 2;
   const radius = wheelDiameter / 2;
-  const normalizedCount = clamp(safeOptionCount, 3, 12);
-  const radialRatio = clamp(0.61 - (normalizedCount - 3) * 0.01, 0.55, 0.61);
-  const widthRatio = clamp(0.24 - (normalizedCount - 3) * 0.004, 0.20, 0.24);
+  const normalizedCount = Math.max(safeOptionCount, 3);
+  const radialRatio = clamp(0.61 - (normalizedCount - 3) * 0.006, 0.4, 0.61);
+  const widthRatio = clamp(0.24 - (normalizedCount - 3) * 0.005, 0.16, 0.24);
   const lines = splitWheelLabel(name);
 
   return {

@@ -51,4 +51,27 @@ describe('wheel label helpers', () => {
     expect(layout.radialOffset).toBeLessThan(102);
     expect(layout.lines).toEqual(['黄焖鸡', '米饭']);
   });
+
+  it('wraps long ASCII labels predictably', () => {
+    expect(splitWheelLabel('Roasted Chicken Rice')).toEqual(['Roasted Chicken', 'Rice']);
+  });
+
+  it('shrinks layout geometry for 13+ options', () => {
+    const layout12 = buildWheelLabelLayout({
+      name: 'Multi Option',
+      index: 0,
+      optionCount: 12,
+      wheelDiameter: 300,
+    });
+
+    const layout13 = buildWheelLabelLayout({
+      name: 'Multi Option',
+      index: 0,
+      optionCount: 13,
+      wheelDiameter: 300,
+    });
+
+    expect(layout13.radialOffset).toBeLessThan(layout12.radialOffset);
+    expect(layout13.width).toBeLessThan(layout12.width);
+  });
 });

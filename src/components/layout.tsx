@@ -43,11 +43,12 @@ export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavPr
   ];
 
   return (
-    <div
+    <nav
+      aria-label="主导航"
       className={clsx(
         'absolute bottom-0 left-0 z-40 flex h-[84px] w-full items-start justify-around border-t px-4 pb-6 pt-3',
         dark
-          ? 'border-slate-800 bg-slate-900/90 text-white backdrop-blur'
+          ? 'border-white/10 bg-slate-950/88 text-white shadow-[0_-12px_32px_rgba(2,6,23,0.45)] backdrop-blur-xl'
           : 'border-slate-100 bg-white/95 shadow-[0_-10px_30px_rgba(15,23,42,0.04)] backdrop-blur',
       )}
     >
@@ -61,8 +62,8 @@ export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavPr
             aria-label={item.label}
             onClick={() => onNavigate(item.page)}
             className={clsx(
-              'flex min-w-[64px] flex-col items-center gap-1 text-[11px] transition tap-effect',
-              active ? 'text-theme-500' : dark ? 'text-slate-500' : 'text-slate-400',
+              'flex min-w-[72px] flex-col items-center gap-1.5 text-[11px] font-medium leading-none transition tap-effect',
+              active ? (dark ? 'text-theme-400' : 'text-theme-500') : dark ? 'text-slate-300/70' : 'text-slate-400',
             )}
           >
             <span className="text-[18px]">{item.icon}</span>
@@ -70,6 +71,6 @@ export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavPr
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

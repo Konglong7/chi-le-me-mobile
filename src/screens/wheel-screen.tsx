@@ -254,7 +254,7 @@ export function WheelScreen() {
         </div>
       </ScreenScroller>
 
-      <BottomNav currentPage="wheel" onNavigate={actions.navigate} />
+      <BottomNav currentPage="wheel" onNavigate={actions.navigate} dark />
     </AppShell>
   );
 }

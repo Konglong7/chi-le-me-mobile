@@ -5,6 +5,7 @@ build/
 .env.local
 .env.*.local
 .ccpanes/
+.worktrees/
 .superpowers/
 coverage/
 output/

@@ -14,6 +14,7 @@ import {
 import { getOrCreateDeviceId } from '../lib/device';
 import { connectRealtimeSession, type RealtimeConnection } from '../lib/realtime';
 import { loadPersistedState, savePersistedState } from '../lib/storage';
+import { calculateTargetWheelRotation } from '../lib/wheel';
 import type {
   AppPage,
   AppStoreState,
@@ -472,7 +473,11 @@ function appReducer(state: AppStoreState, action: Action): AppStoreState {
       return {
         ...state,
         wheelResult: result.name,
-        wheelRotation: state.wheelRotation + 1080 + index * 45,
+        wheelRotation: calculateTargetWheelRotation({
+          currentRotation: state.wheelRotation,
+          optionCount: state.wheelOptions.length,
+          targetIndex: index,
+        }),
       };
     }
 

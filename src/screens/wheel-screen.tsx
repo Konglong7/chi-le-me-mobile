@@ -3,14 +3,19 @@ import { FaFileImport, FaPlus, FaXmark } from 'react-icons/fa6';
 import { useAppStore } from '../app/store';
 import { AppShell, BottomNav, ScreenScroller } from '../components/layout';
 import { playWheelSpinSound } from '../lib/audio';
+import { buildWheelGradient, getWinningWheelIndex } from '../lib/wheel';
 import { wheelPresets } from '../lib/wheel-presets';
 export function WheelScreen() {
   const { state, actions } = useAppStore();
   const [customImport, setCustomImport] = useState('');
   const [liveResult, setLiveResult] = useState(state.wheelResult);
+  const [animatedRotation, setAnimatedRotation] = useState(state.wheelRotation);
   const latestResultRef = useRef(state.wheelResult);
+  const previousRotationRef = useRef(state.wheelRotation);
+  const animationFrameRef = useRef<number | null>(null);
+  const hasOptions = state.wheelOptions.length > 0;
   const segments = useMemo(() => {
-    const options = state.wheelOptions.length > 0 ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
+    const options = hasOptions ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
     const slice = 360 / options.length;
 
     return options.map((option, index) => ({
@@ -19,12 +24,66 @@ export function WheelScreen() {
       textRotation: index * slice + slice / 2,
       slice,
     }));
-  }, [state.wheelOptions]);
+  }, [hasOptions, state.wheelOptions]);
+
+  const wheelGradient = useMemo(() => buildWheelGradient(segments.length), [segments.length]);
 
   useEffect(() => {
     latestResultRef.current = state.wheelResult;
     setLiveResult(state.wheelResult);
   }, [state.wheelResult]);
+
+  useEffect(() => {
+    if (!hasOptions) {
+      previousRotationRef.current = state.wheelRotation;
+      setAnimatedRotation(state.wheelRotation);
+      return;
+    }
+
+    const from = previousRotationRef.current;
+    const to = state.wheelRotation;
+
+    if (from === to) {
+      setAnimatedRotation(to);
+      return;
+    }
+
+    const duration = 3000;
+    const start = performance.now();
+
+    if (animationFrameRef.current) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - (1 - progress) ** 3;
+      const nextRotation = from + (to - from) * eased;
+      const nextIndex = getWinningWheelIndex(nextRotation, state.wheelOptions.length);
+
+      setAnimatedRotation(nextRotation);
+      setLiveResult(state.wheelOptions[nextIndex]?.name ?? latestResultRef.current);
+
+      if (progress < 1) {
+        animationFrameRef.current = window.requestAnimationFrame(animate);
+        return;
+      }
+
+      previousRotationRef.current = to;
+      setAnimatedRotation(to);
+      setLiveResult(latestResultRef.current);
+      animationFrameRef.current = null;
+    };
+
+    animationFrameRef.current = window.requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [hasOptions, state.wheelOptions, state.wheelRotation]);
 
   const importCustomOptions = () => {
     const names = customImport
@@ -48,11 +107,10 @@ export function WheelScreen() {
 
           <div className="relative mb-8 h-[300px] w-[300px]">
             <div
-              className="relative h-full w-full rounded-full border-4 border-white shadow-[0_10px_25px_rgba(239,68,68,0.3)] transition-transform duration-[3000ms] ease-out"
+              className="relative h-full w-full rounded-full border-4 border-white shadow-[0_10px_25px_rgba(239,68,68,0.3)]"
               style={{
-                background:
-                  'conic-gradient(#ef4444 0deg 60deg, #f87171 60deg 120deg, #fca5a5 120deg 180deg, #ef4444 180deg 240deg, #f87171 240deg 300deg, #fca5a5 300deg 360deg)',
-                transform: `rotate(${state.wheelRotation}deg)`,
+                background: wheelGradient,
+                transform: `rotate(${animatedRotation}deg)`,
               }}
             >
               <div className="absolute inset-0 rounded-full border-8 border-slate-800/50 shadow-[0_0_50px_rgba(239,68,68,0.3)]" />
@@ -61,10 +119,10 @@ export function WheelScreen() {
                   key={segment.id}
                   className="absolute left-1/2 top-1/2 origin-center"
                   style={{
-                    transform: `rotate(${segment.textRotation}deg) translateY(-124px) rotate(${-segment.textRotation}deg)`,
+                    transform: `rotate(${segment.textRotation}deg) translateY(-114px) rotate(${-segment.textRotation}deg)`,
                   }}
                 >
-                  <span className="block max-w-[66px] text-center text-[10px] font-bold leading-3.5 text-white drop-shadow-[0_2px_4px_rgba(15,23,42,0.75)]">
+                  <span className="block max-w-[74px] text-center text-[11px] font-bold leading-4 text-white drop-shadow-[0_2px_4px_rgba(15,23,42,0.75)]">
                     {segment.name}
                   </span>
                 </div>
@@ -77,20 +135,16 @@ export function WheelScreen() {
             <button
               type="button"
               aria-label="开始转盘"
+              disabled={!hasOptions}
               onClick={() => {
-                const options = state.wheelOptions.length > 0 ? state.wheelOptions : [{ id: 'placeholder', name: '请先导入选项' }];
+                if (!hasOptions) {
+                  return;
+                }
+
                 playWheelSpinSound();
-                const interval = window.setInterval(() => {
-                  const random = options[Math.floor(Math.random() * options.length)];
-                  setLiveResult(random.name);
-                }, 120);
                 actions.spinWheel();
-                window.setTimeout(() => {
-                  window.clearInterval(interval);
-                  setLiveResult((current) => latestResultRef.current ?? current);
-                }, 3000);
               }}
-              className="absolute left-1/2 top-1/2 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
+              className="absolute left-1/2 top-1/2 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent disabled:cursor-not-allowed"
             />
           </div>
 

@@ -18,10 +18,10 @@ interface BottomNavProps {
 
 export function AppShell({ children, className, statusLight = false, indicatorLight = false }: ShellProps) {
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] md:p-8">
+    <div className="h-[100svh] overflow-hidden bg-[var(--app-bg)] md:flex md:min-h-screen md:h-auto md:items-center md:justify-center md:p-8">
       <div
         className={clsx(
-          'relative mx-auto flex min-h-screen w-full max-w-[430px] flex-col overflow-hidden bg-white md:min-h-[900px] md:rounded-[42px] md:border-[14px] md:border-slate-800 md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.28)]',
+          'relative mx-auto flex h-[100svh] min-h-0 w-full max-w-[430px] flex-col overflow-hidden bg-white md:h-[900px] md:rounded-[42px] md:border-[14px] md:border-slate-800 md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.28)]',
           className,
         )}
       >
@@ -32,7 +32,7 @@ export function AppShell({ children, className, statusLight = false, indicatorLi
 }
 
 export function ScreenScroller({ children, className }: { children: ReactNode; className?: string }) {
-  return <main className={clsx('relative flex-1 overflow-y-auto hide-scrollbar', className)}>{children}</main>;
+  return <main className={clsx('relative min-h-0 flex-1 overflow-y-auto hide-scrollbar', className)}>{children}</main>;
 }
 
 export function BottomNav({ currentPage, onNavigate, dark = false }: BottomNavProps) {

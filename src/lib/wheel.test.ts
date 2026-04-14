@@ -74,4 +74,19 @@ describe('wheel label helpers', () => {
     expect(layout13.radialOffset).toBeLessThan(layout12.radialOffset);
     expect(layout13.width).toBeLessThan(layout12.width);
   });
+
+  it('caps width to the sector span for dense wheels', () => {
+    [8, 12].forEach((optionCount) => {
+      const layout = buildWheelLabelLayout({
+        name: 'Dense Label',
+        index: 0,
+        optionCount,
+        wheelDiameter: 300,
+      });
+
+      const sliceAngle = (360 / optionCount) * (Math.PI / 180);
+      const chord = layout.radialOffset * 2 * Math.sin(sliceAngle / 2);
+      expect(layout.width).toBeLessThanOrEqual(chord);
+    });
+  });
 });

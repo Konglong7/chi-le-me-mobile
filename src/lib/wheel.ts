@@ -128,12 +128,16 @@ export function buildWheelLabelLayout({
   const radialRatio = clamp(0.61 - (normalizedCount - 3) * 0.006, 0.4, 0.61);
   const widthRatio = clamp(0.24 - (normalizedCount - 3) * 0.005, 0.16, 0.24);
   const lines = splitWheelLabel(name);
+  const radialOffset = radius * radialRatio;
+  const sliceAngle = (slice * Math.PI) / 180;
+  const sectorWidth = radialOffset * 2 * Math.sin(sliceAngle / 2);
+  const width = Math.min(wheelDiameter * widthRatio, sectorWidth);
 
   return {
     centerAngle,
     textAngle: 90,
-    radialOffset: radius * radialRatio,
-    width: wheelDiameter * widthRatio,
+    radialOffset,
+    width,
     fontSize: lines.length > 1 ? 12 : 13,
     lineHeight: lines.length > 1 ? 1.1 : 1.2,
     lines,

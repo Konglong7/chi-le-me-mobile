@@ -130,7 +130,8 @@ export function buildWheelLabelLayout({
   const lines = splitWheelLabel(name);
   const radialOffset = radius * radialRatio;
   const sliceAngle = (slice * Math.PI) / 180;
-  const sectorWidth = radialOffset * 2 * Math.sin(sliceAngle / 2);
+  const sectorWidth =
+    safeOptionCount > 1 ? radialOffset * 2 * Math.sin(sliceAngle / 2) : Number.POSITIVE_INFINITY;
   const width = Math.min(wheelDiameter * widthRatio, sectorWidth);
 
   return {

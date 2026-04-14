@@ -89,4 +89,15 @@ describe('wheel label helpers', () => {
       expect(layout.width).toBeLessThanOrEqual(chord);
     });
   });
+
+  it('provides a usable width for a single-option wheel', () => {
+    const layout = buildWheelLabelLayout({
+      name: 'Solo',
+      index: 0,
+      optionCount: 1,
+      wheelDiameter: 300,
+    });
+
+    expect(layout.width).toBeGreaterThanOrEqual(300 * 0.16);
+  });
 });
